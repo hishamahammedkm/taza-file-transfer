@@ -35,8 +35,12 @@ const data = [
   { value: 'YB05', label: 'YANBU KING KHALID' },
 ];
 
-const DropdownComponent = () => {
-  const [value, setValue] = useState<string | null>(null);
+type Props = {
+  value?: any;
+  setValue: (value: Invoice) => void;
+};
+
+const DropdownComponent = ({ value, setValue }: Props) => {
   const [isFocus, setIsFocus] = useState(false);
 
   const renderLabel = () => {
@@ -62,11 +66,11 @@ const DropdownComponent = () => {
         valueField="value"
         placeholder={!isFocus ? 'Select Branch' : '...'}
         searchPlaceholder="Search..."
-        value={value}
+        value={value?.branch_code}
         onFocus={() => setIsFocus(true)}
         onBlur={() => setIsFocus(false)}
         onChange={(item) => {
-          setValue(item?.value);
+          setValue({ ...value,branch_code: item?.value });
           setIsFocus(false);
         }}
         renderLeftIcon={() => (
@@ -87,8 +91,7 @@ export default DropdownComponent;
 const styles = StyleSheet.create({
   container: {
     width: '100%',
- // Light background inspired by the logo's border color
-
+    // Light background inspired by the logo's border color
   },
   dropdown: {
     width: '100%',

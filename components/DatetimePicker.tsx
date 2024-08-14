@@ -2,22 +2,28 @@ import React, { useState } from 'react';
 import { View, Button, Platform, StyleSheet, Pressable } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Text } from 'react-native';
+type Props = {
+  value?: Invoice;
+  setValue: (value: Invoice) => void;
+};
 
-export default function DTPicker() {
-  const [date, setDate] = useState(new Date());
+export default function DTPicker({ value, setValue }: Props) {
+  // const [date, setDate] = useState(new Date());
   const [mode, setMode] = useState('date');
   const [show, setShow] = useState(false);
 
   const onChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    const currentDate = selectedDate || date;
+    const currentDate = selectedDate || new Date();
     setShow(Platform.OS === 'ios');
 
     if (mode === 'date') {
-      setDate(currentDate);
+      setValue({ ...value, date_time: currentDate });
       setMode('time'); // Change to time picker after selecting date
       setShow(true); // Show the time picker
     } else {
-      setDate(currentDate); // Update the date with the selected time
+      // setDate(currentDate);
+      setValue({ ...value, date_time: currentDate });
+      // Update the date with the selected time
       setShow(false); // Close the picker
     }
   };
@@ -40,14 +46,14 @@ export default function DTPicker() {
     <View style={styles.container}>
       <Pressable onPress={showDatepicker} className="rounded-full bg-white p-2">
         <Text className=" mt-2 self-center text-lg  font-extrabold text-red-600">
-          Date and Time: {date.toLocaleDateString()} {date.toLocaleTimeString()}
+          Date and Time: {value?.date_time.toLocaleDateString()} {value?.date_time.toLocaleTimeString()}
         </Text>
       </Pressable>
 
       {show && (
         <DateTimePicker
           testID="dateTimePicker"
-          value={date}
+          value={value?.date_time || new Date()}
           mode={mode}
           is24Hour={true}
           display="default"

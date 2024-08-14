@@ -5,11 +5,23 @@ import DropdownComponent from '~/components/BrachSelector';
 import DTPicker from '~/components/DatetimePicker';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as FileSystem from 'expo-file-system';
+import { randomUUID } from 'expo-crypto';
+import { supabase } from '~/utils/supabase';
+import { decode } from 'base64-arraybuffer';
+import { useInsertInvoice } from '~/api/invoice';
+import { TouchableOpacity } from 'react-native';
 
 export default function Home() {
-  const [text, setText] = useState('');
+  const { mutate: insertInvoice, isSuccess, error } = useInsertInvoice();
 
-
+  const [invoice, setInvoice] = useState<Invoice>({
+    invoice_number: '',
+    branch_code: '',
+    remarks: '',
+    file_path: '',
+    date_time: new Date(),
+  });
 
   const [image, setImage] = useState<string | null>(null);
 
@@ -25,6 +37,47 @@ export default function Home() {
       setImage(result.assets[0].uri);
     }
   };
+  const uploadImage = async () => {
+    if (!image?.startsWith('file://')) {
+      return;
+    }
+
+    const fileEx = image.split('.').pop() || 'png';
+    const base64 = await FileSystem.readAsStringAsync(image, {
+      encoding: 'base64',
+    });
+    const filePath = `invoices/${randomUUID()}.${fileEx}`;
+    const contentType = `image/${fileEx}`;
+
+    const { data, error } = await supabase.storage
+      .from('assets')
+      .upload(filePath, decode(base64), { contentType });
+
+    console.log(error);
+
+    if (data) {
+      return data.fullPath;
+    }
+  };
+
+  const handleSubmit = async () => {
+    const file_path = await uploadImage();
+    // if (!file_path) {
+    //   return;
+    // }
+
+    insertInvoice({ ...invoice, file_path });
+    // if (isSuccess) {
+    //   setImage(null);
+    //   setInvoice({
+    //     invoice_number: '',
+    //     branch_code: '',
+    //     remarks: '',
+    //     file_path: '',
+    //     date_time: new Date(),
+    //   });
+    // }
+  };
 
   return (
     // hide header using stack
@@ -32,14 +85,16 @@ export default function Home() {
     <SafeAreaView>
       <View className="flex h-screen gap-5 bg-red-500 p-5">
         <TextInput
-        className='text-red-500'
+          className="text-red-500"
           style={styles.input}
           placeholder="Enter invoice number..."
           placeholderTextColor="#FFB03B" // Light yellow color similar to the border in the logo
+          value={invoice.invoice_number}
+          onChangeText={(text) => setInvoice({ ...invoice, invoice_number: text })}
         />
 
-        <DropdownComponent />
-        <DTPicker />
+        <DropdownComponent value={invoice} setValue={setInvoice} />
+        <DTPicker value={invoice} setValue={setInvoice} />
         {!image && (
           <Pressable
             className="flex h-60 items-center justify-center rounded-lg bg-white"
@@ -51,22 +106,25 @@ export default function Home() {
 
         {/* text area */}
         <TextInput
-        
-          className="bg-white p-3 text-red-500 font-bold rounded-lg placeholder:text-yellow-500 "
+          className="rounded-lg bg-white p-3 font-bold text-red-500 placeholder:text-yellow-500 "
           placeholder="Remarks"
           placeholderTextColor="yellow"
           multiline={true}
           numberOfLines={4}
-          value={text}
-          onChangeText={setText}
+          onChangeText={(text) => setInvoice({ ...invoice, remarks: text })}
+          value={invoice.remarks}
           textAlignVertical="top" // Ensures the text starts from the top
         />
 
-        <Pressable
+        <TouchableOpacity
           className="mt-5 items-center rounded-full bg-yellow-400 px-8 py-3"
-          onPress={() => {}}>
-          <Text style={styles.submitButtonText}>Submit</Text>
-        </Pressable>
+          onPress={() => {
+            handleSubmit();
+          }}>
+          <Text className="text-red-500" style={styles.submitButtonText}>
+            Submit
+          </Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -111,7 +169,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: '#fff',
     fontSize: 16,
-
   },
   submitButton: {
     marginTop: 20,
