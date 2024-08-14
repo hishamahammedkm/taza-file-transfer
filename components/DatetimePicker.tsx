@@ -11,7 +11,15 @@ export default function DTPicker() {
   const onChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     const currentDate = selectedDate || date;
     setShow(Platform.OS === 'ios');
-    setDate(currentDate);
+    
+    if (mode === 'date') {
+        setDate(currentDate);
+        setMode('time');  // Change to time picker after selecting date
+        setShow(true);    // Show the time picker
+      } else {
+        setDate(currentDate); // Update the date with the selected time
+        setShow(false);       // Close the picker
+      }
   };
 
   const showMode = (currentMode: any) => {
@@ -21,6 +29,8 @@ export default function DTPicker() {
 
   const showDatepicker = () => {
     showMode('date');
+    setShow(true);
+
   };
 
   const showTimepicker = () => {
@@ -32,9 +42,7 @@ export default function DTPicker() {
       <View>
         <Button onPress={showDatepicker} title="Show date picker" />
       </View>
-      <View>
-        <Button onPress={showTimepicker} title="Show time picker" />
-      </View>
+  
       {show && (
         <DateTimePicker
           testID="dateTimePicker"
@@ -46,8 +54,8 @@ export default function DTPicker() {
           onChange={onChange}
         />
       )}
-      <Text>Selected Date: {date.toLocaleDateString()}</Text>
-      <Text>Selected Time: {date.toLocaleTimeString()}</Text>
+      <Text>Selected Date and Time: {date.toLocaleDateString()}  {date.toLocaleTimeString()}</Text>
+
     </View>
   );
 }
