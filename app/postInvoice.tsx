@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DropdownComponent from '~/components/BrachSelector';
 import DTPicker from '~/components/DatetimePicker';
@@ -13,7 +13,9 @@ import { useInsertInvoice } from '~/api/invoice';
 import { TouchableOpacity } from 'react-native';
 
 export default function Home() {
-  const { mutate: insertInvoice, isSuccess, error } = useInsertInvoice();
+  const [loading, setLoading] = useState(false);
+  const { mutate: insertInvoice, isSuccess, error, isPending, status } = useInsertInvoice();
+  console.log('isSuccess, error, isPending, status---', isSuccess, error, isPending, status);
 
   const [invoice, setInvoice] = useState<Invoice>({
     invoice_number: '',
@@ -61,22 +63,31 @@ export default function Home() {
   };
 
   const handleSubmit = async () => {
+    setLoading(true);
     const file_path = await uploadImage();
     // if (!file_path) {
     //   return;
     // }
 
-    insertInvoice({ ...invoice, file_path });
-    // if (isSuccess) {
-    //   setImage(null);
-    //   setInvoice({
-    //     invoice_number: '',
-    //     branch_code: '',
-    //     remarks: '',
-    //     file_path: '',
-    //     date_time: new Date(),
-    //   });
-    // }
+    insertInvoice(
+      { ...invoice, file_path },
+      {
+        onSuccess: () => {
+          console.log('ssssss');
+
+          setImage(null);
+          setInvoice({
+            invoice_number: '',
+            branch_code: '',
+            remarks: '',
+            file_path: '',
+            date_time: new Date(),
+          });
+        },
+      }
+    );
+    setLoading(false);
+    Alert.alert("Success")
   };
 
   return (
@@ -122,7 +133,7 @@ export default function Home() {
             handleSubmit();
           }}>
           <Text className="text-red-500" style={styles.submitButtonText}>
-            Submit
+            {loading ? 'Submitting...' : 'Submit'}
           </Text>
         </TouchableOpacity>
       </View>
