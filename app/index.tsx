@@ -1,22 +1,22 @@
 import { useState } from 'react';
-import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Input, Icon, Button } from '@rneui/themed';
-
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import DropDown from '~/components/dropDown/DropDown';
 import DropdownComponent from '~/components/BrachSelector';
-import { TextInput } from 'react-native-paper';
-
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import DTPicker from '~/components/DatetimePicker';
+import { useNavigation } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Home() {
+  const [text, setText] = useState('');
+
+  useNavigation().setOptions({ headerShown: false });
+
   const [image, setImage] = useState<string | null>(null);
+
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
+      // allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
@@ -27,45 +27,103 @@ export default function Home() {
   };
 
   return (
-    <View>
-      <Image source={{ uri: image || '' }} style={styles.image} />
-      <Text onPress={pickImage} style={styles.textButton}>
-        Select Image
-      </Text>
-      <Input placeholder="Enter Invoice number" />
+    // hide header using stack
 
-      <DropdownComponent />
-      <DTPicker />
-    </View>
+    <SafeAreaView>
+      <View className="flex h-screen gap-5 bg-red-500 p-5">
+        <TextInput
+        className='text-red-500'
+          style={styles.input}
+          placeholder="Enter invoice number..."
+          placeholderTextColor="#FFB03B" // Light yellow color similar to the border in the logo
+        />
+
+        <DropdownComponent />
+        <DTPicker />
+        {!image && (
+          <Pressable
+            className="flex h-60 items-center justify-center rounded-lg bg-white"
+            onPress={pickImage}>
+            <Text className="font-bold text-yellow-500">Pick an image</Text>
+          </Pressable>
+        )}
+        {image && <Image source={{ uri: image }} style={styles.image} />}
+
+        {/* text area */}
+        <TextInput
+        
+          className="bg-white p-3 text-red-500 font-bold rounded-lg placeholder:text-yellow-500 "
+          placeholder="Remarks"
+          placeholderTextColor="yellow"
+          multiline={true}
+          numberOfLines={4}
+          value={text}
+          onChangeText={setText}
+          textAlignVertical="top" // Ensures the text starts from the top
+        />
+
+        <Pressable
+          className="mt-5 items-center rounded-full bg-yellow-400 px-8 py-3"
+          onPress={() => {}}>
+          <Text style={styles.submitButtonText}>Submit</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    padding: 10,
+    gap: 10,
+    padding: 16,
+    backgroundColor: '#FFF1D7',
+    // gap:10 // Light background color inspired by the logo's border
   },
   image: {
-    width: '50%',
+    width: '100%',
     aspectRatio: 1,
+
     alignSelf: 'center',
+    // width: "auto",
+    // // height: "auto",
+    height: 300,
+    // objectFit:"contain",
+    borderRadius: 15,
+    marginBottom: 10,
+    // backgroundColor: '#FFD7B5', // Placeholder background when no image is selected
+    borderColor: '#D32F2F', // Red border color to match the logo
+    borderWidth: 2,
   },
   textButton: {
-    alignSelf: 'center',
+    textAlign: 'center',
+    color: '#D32F2F', // Red color similar to the logo's text
+    fontSize: 18,
     fontWeight: 'bold',
-    color: 'green',
-    marginVertical: 10,
-  },
-
-  input: {
-    backgroundColor: 'white',
-    padding: 10,
-    borderRadius: 5,
     marginTop: 5,
-    marginBottom: 20,
   },
-  label: {
-    color: 'gray',
+  input: {
+    width: '100%',
+    height: 50,
+    borderColor: '#D32F2F', // Red color similar to the background of the logo
+    borderWidth: 1,
+    borderRadius: 25, // Rounded corners like the circular design in the logo
+    paddingHorizontal: 20,
+    backgroundColor: '#fff',
     fontSize: 16,
+
+  },
+  submitButton: {
+    marginTop: 20,
+    backgroundColor: '#D32F2F', // Red color inspired by the logo
+    borderRadius: 25, // Rounded corners to match the logo's style
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+  },
+  submitButtonText: {
+    color: '#FFFFFF', // White text for contrast
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });

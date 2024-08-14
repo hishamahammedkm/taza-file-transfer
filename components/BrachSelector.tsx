@@ -41,16 +41,16 @@ const DropdownComponent = () => {
 
   const renderLabel = () => {
     if (value || isFocus) {
-      return <Text style={[styles.label, isFocus && { color: 'blue' }]}>Select Branch</Text>;
+      return <Text style={[styles.label, isFocus && { color: '#D32F2F' }]}>Select Branch</Text>;
     }
     return null;
   };
 
   return (
     <View style={styles.container}>
-      {renderLabel()}
+      {/* {renderLabel()} */}
       <Dropdown
-        style={[styles.dropdown, isFocus && { borderColor: 'blue' }]}
+        style={[styles.dropdown, isFocus && { borderColor: '#D32F2F' }]}
         placeholderStyle={styles.placeholderStyle}
         selectedTextStyle={styles.selectedTextStyle}
         inputSearchStyle={styles.inputSearchStyle}
@@ -69,14 +69,14 @@ const DropdownComponent = () => {
           setValue(item?.value);
           setIsFocus(false);
         }}
-        // renderLeftIcon={() => (
-        //   <AntDesign
-        //     style={styles.icon}
-        //     color={isFocus ? 'blue' : 'black'}
-        //     name="Safety"
-        //     size={20}
-        //   />
-        // )}
+        renderLeftIcon={() => (
+          <AntDesign
+            style={styles.icon}
+            color={isFocus ? '#D32F2F' : '#FFB03B'}
+            name="Safety"
+            size={20}
+          />
+        )}
       />
     </View>
   );
@@ -86,40 +86,49 @@ export default DropdownComponent;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
-    padding: 16,
+    width: '100%',
+ // Light background inspired by the logo's border color
+
   },
   dropdown: {
+    width: '100%',
     height: 50,
-    borderColor: 'gray',
-    borderWidth: 0.5,
-    borderRadius: 8,
+    borderColor: '#D32F2F', // Red color similar to the background of the logo
+    borderWidth: 1,
+    borderRadius: 25, // Rounded corners inspired by the circular design of the logo
     paddingHorizontal: 8,
+    backgroundColor: '#fff',
   },
   icon: {
     marginRight: 5,
   },
   label: {
     position: 'absolute',
-    backgroundColor: 'white',
+    backgroundColor: '#FFF1D7',
     left: 22,
     top: 8,
     zIndex: 999,
     paddingHorizontal: 8,
     fontSize: 14,
+    color: '#D32F2F', // Red color similar to the text in the logo
+    fontWeight: 'bold',
   },
   placeholderStyle: {
     fontSize: 16,
+    color: '#FFB03B', // Light yellow color to match the outer ring of the logo
   },
   selectedTextStyle: {
     fontSize: 16,
+    color: '#D32F2F', // Red color similar to the text in the logo
   },
   iconStyle: {
     width: 20,
     height: 20,
+    tintColor: '#D32F2F', // Red color similar to the logo
   },
   inputSearchStyle: {
     height: 40,
     fontSize: 16,
+    color: '#D32F2F', // Red color similar to the logo
   },
 });
