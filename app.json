@@ -32,6 +32,14 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.hishamkm.tazafiletransfer"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "9c1ac73a-12b6-40a4-b16f-7775b4b33280"
+      }
     }
   }
 }
