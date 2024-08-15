@@ -31,12 +31,7 @@ const Header = ({ title }: Props) => {
         <Menu.Item disabled onPress={() => {}} title="Hisham ahammed" />
         <Divider />
 
-        <Menu.Item
-          onPress={() => {
-            supabase.auth.signOut();
-          }}
-          title="Log out"
-        />
+        <Menu.Item onPress={async () => await supabase.auth.signOut()} title="Log out" />
 
         <Divider />
       </Menu>
