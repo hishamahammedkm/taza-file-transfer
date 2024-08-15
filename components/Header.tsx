@@ -5,12 +5,15 @@ import { Appbar, Divider, Menu, useTheme } from 'react-native-paper';
 import useMenu from '~/hooks/useMenu';
 import { supabase } from '~/utils/supabase';
 import { router } from 'expo-router';
+import { useAuth } from '~/providers/AuthProvider';
 
 interface Props {
   title: string;
 }
 
 const Header = ({ title }: Props) => {
+  const { session, loading } = useAuth();
+  console.log('session---', session?.user.email, loading);
   const theme = useTheme();
 
   const MORE_ICON = Platform.OS === 'ios' ? 'dots-horizontal' : 'dots-vertical';
@@ -29,7 +32,7 @@ const Header = ({ title }: Props) => {
         visible={visible}
         onDismiss={closeMenu}
         anchor={<Appbar.Action icon={MORE_ICON} onPress={openMenu} />}>
-        <Menu.Item disabled onPress={() => {}} title="Hisham ahammed" />
+        <Menu.Item disabled onPress={() => {}} title={session?.user.email} />
         <Divider />
 
         <Menu.Item

@@ -16,7 +16,7 @@ import Header from '~/components/Header';
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const { mutate: insertInvoice, isSuccess, error, isPending, status } = useInsertInvoice();
-  console.log('isSuccess, error, isPending, status---', isSuccess, error, isPending, status);
+  // console.log('isSuccess, error, isPending, status---', isSuccess, error, isPending, status);
 
   const [invoice, setInvoice] = useState<Invoice>({
     invoice_number: '',
@@ -64,6 +64,7 @@ export default function Home() {
   };
 
   const handleSubmit = async () => {
+    if (loading) return;
     setLoading(true);
     const file_path = await uploadImage();
     // if (!file_path) {
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     // width: "auto",
     // // height: "auto",
-    height: 300,
+    height: 240,
     // objectFit:"contain",
     borderRadius: 15,
     marginBottom: 10,
