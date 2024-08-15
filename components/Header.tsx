@@ -4,6 +4,7 @@ import { Appbar, Divider, Menu, useTheme } from 'react-native-paper';
 
 import useMenu from '~/hooks/useMenu';
 import { supabase } from '~/utils/supabase';
+import { router } from 'expo-router';
 
 interface Props {
   title: string;
@@ -31,7 +32,13 @@ const Header = ({ title }: Props) => {
         <Menu.Item disabled onPress={() => {}} title="Hisham ahammed" />
         <Divider />
 
-        <Menu.Item onPress={async () => await supabase.auth.signOut()} title="Log out" />
+        <Menu.Item
+          onPress={async () => {
+            await supabase.auth.signOut();
+            router.replace('/sign-in');
+          }}
+          title="Log out"
+        />
 
         <Divider />
       </Menu>
