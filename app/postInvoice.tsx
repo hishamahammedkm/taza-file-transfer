@@ -11,6 +11,7 @@ import { supabase } from '~/utils/supabase';
 import { decode } from 'base64-arraybuffer';
 import { useInsertInvoice } from '~/api/invoice';
 import { TouchableOpacity } from 'react-native';
+import Header from '~/components/Header';
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
@@ -87,13 +88,14 @@ export default function Home() {
       }
     );
     setLoading(false);
-    Alert.alert("Success")
+    Alert.alert('Success');
   };
 
   return (
     // hide header using stack
 
-    <SafeAreaView>
+    <>
+      <Header title="Add Invoice" />
       <View className="flex h-screen gap-5 bg-red-500 p-5">
         <TextInput
           className="text-red-500"
@@ -137,7 +139,7 @@ export default function Home() {
           </Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </>
   );
 }
 

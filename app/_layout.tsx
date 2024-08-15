@@ -1,6 +1,7 @@
 import '../global.css';
 
 import { Stack, SplashScreen } from 'expo-router';
+import { PaperProvider } from 'react-native-paper';
 import AuthProvider from '~/providers/AuthProvider';
 import QueryProvider from '~/providers/QueryProvider';
 
@@ -14,6 +15,7 @@ import QueryProvider from '~/providers/QueryProvider';
 
 export default function Layout() {
   return (
+    <PaperProvider>
     <AuthProvider>
       <QueryProvider>
         <Stack>
@@ -22,5 +24,8 @@ export default function Layout() {
         </Stack>
       </QueryProvider>
     </AuthProvider>
+    </PaperProvider>
+
+
   );
 }
