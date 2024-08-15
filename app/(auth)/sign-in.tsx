@@ -55,10 +55,11 @@ const SignInScreen = () => {
             {loading ? 'Signing in...' : 'Sign in'}
           </Text>
         </TouchableOpacity>
-
-        <Link className="" href="/sign-up" asChild>
-          <Text className=" self-center  text-yellow-500">Create an account</Text>
-        </Link>
+        <View>
+          <Link className="" href="/sign-up" asChild>
+            <Text className=" text-xs text-yellow-500">Create an account ?</Text>
+          </Link>
+        </View>
       </View>
     </View>
   );

@@ -54,7 +54,7 @@ const SignUpScreen = () => {
         </TouchableOpacity>
 
         <Link className="" href="/sign-in" asChild>
-          <Text className=" self-center  text-yellow-500">Already hav an account ?</Text>
+          <Text className="text-xs text-yellow-500">Already hav an account ?</Text>
         </Link>
       </View>
     </View>
