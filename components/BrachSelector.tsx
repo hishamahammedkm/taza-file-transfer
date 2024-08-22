@@ -35,7 +35,7 @@ const DropdownComponent = ({ value, setValue, data }: Props) => {
         valueField="value"
         placeholder={!isFocus ? 'Select Branch' : '...'}
         searchPlaceholder="Search..."
-        value={value?.branch_code}
+        value={value?.branch_id}
         onFocus={() => setIsFocus(true)}
         onBlur={() => setIsFocus(false)}
         onChange={(item) => {

@@ -19,9 +19,9 @@ export default function Home() {
 
   // const branches = data?.map((branch) => ({ value: branch.id, label: branch.name }));
   const branches = [
-    { value: '1', label: 'Branch 1' },
-    { value: '2', label: 'Branch 2' },
-    { value: '3', label: 'Branch 3' },
+    { value: 1, label: 'SHARAYA' },
+    { value: 2, label: 'SANAYA' },
+    { value: 3, label: 'HADA' },
   ];
 
   const { mutate: insertInvoice, isSuccess, error, isPending, status } = useInsertInvoice();

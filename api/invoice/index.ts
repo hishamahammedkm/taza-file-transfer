@@ -13,7 +13,7 @@ export const useInsertInvoice = () => {
         .from('invoices')
         .insert({
           invoice_number: data.invoice_number,
-          branch_id: 1,
+          branch_id: data.branch_id,
           remarks: data.remarks,
           file_path: data.file_path,
           date_time: data.date_time,
