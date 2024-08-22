@@ -9,18 +9,28 @@ import * as FileSystem from 'expo-file-system';
 import { randomUUID } from 'expo-crypto';
 import { supabase } from '~/utils/supabase';
 import { decode } from 'base64-arraybuffer';
-import { useInsertInvoice } from '~/api/invoice';
+import { useBranches, useInsertInvoice } from '~/api/invoice';
 import { TouchableOpacity } from 'react-native';
 import Header from '~/components/Header';
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
+  // const { data } = useBranches();
+
+  // const branches = data?.map((branch) => ({ value: branch.id, label: branch.name }));
+  const branches = [
+    { value: '1', label: 'Branch 1' },
+    { value: '2', label: 'Branch 2' },
+    { value: '3', label: 'Branch 3' },
+  ];
+
   const { mutate: insertInvoice, isSuccess, error, isPending, status } = useInsertInvoice();
   // console.log('isSuccess, error, isPending, status---', isSuccess, error, isPending, status);
 
   const [invoice, setInvoice] = useState<Invoice>({
     invoice_number: '',
-    branch_code: '',
+    branch_id: '',
+
     remarks: '',
     file_path: '',
     date_time: new Date(),
@@ -59,7 +69,7 @@ export default function Home() {
     console.log(error);
 
     if (data) {
-      return data.fullPath;
+      return data.path;
     }
   };
 
@@ -80,7 +90,7 @@ export default function Home() {
           setImage(null);
           setInvoice({
             invoice_number: '',
-            branch_code: '',
+            branch_id: '',
             remarks: '',
             file_path: '',
             date_time: new Date(),
@@ -107,7 +117,7 @@ export default function Home() {
           onChangeText={(text) => setInvoice({ ...invoice, invoice_number: text })}
         />
 
-        <DropdownComponent value={invoice} setValue={setInvoice} />
+        <DropdownComponent data={branches} value={invoice} setValue={setInvoice} />
         <DTPicker value={invoice} setValue={setInvoice} />
         {!image && (
           <Pressable

@@ -3,44 +3,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
-const data = [
-  { value: 'HO01', label: 'Head Office' },
-  { value: 'MA01', label: 'MUHAYIL' },
-  { value: 'MD01', label: 'MADINA DEFAA' },
-  { value: 'MK01', label: 'SHARAYA' },
-  { value: 'MK02', label: 'RUSAIFA' },
-  { value: 'MK03', label: 'Nawaria' },
-  { value: 'PR01', label: 'FACTORY TAIF' },
-  { value: 'RY01', label: 'KITCHEN PARK WADI' },
-  { value: 'RY02', label: 'RAWABI' },
-  { value: 'RY03', label: 'Suwaidi' },
-  { value: 'TF01', label: 'SITHEEN' },
-  { value: 'TF02', label: 'TELEVISION' },
-  { value: 'TF03', label: 'GUMRIYA' },
-  { value: 'TF04', label: 'OKAZ' },
-  { value: 'TF05', label: 'AL QAIM' },
-  { value: 'TF06', label: 'JUNOOB' },
-  { value: 'TF07', label: 'HAWIYYAH' },
-  { value: 'TF08', label: 'DHAHAS' },
-  { value: 'TF09', label: 'SANAYA' },
-  { value: 'TF10', label: 'SHUTBA' },
-  { value: 'TF11', label: 'HALAGA' },
-  { value: 'TF12', label: 'QARWA' },
-  { value: 'TF13', label: 'HADA' },
-  { value: 'WH01', label: 'WAREHOUSE' },
-  { value: 'YB01', label: 'YANBU HAWRA' },
-  { value: 'YB02', label: 'YANBU BALAD' },
-  { value: 'YB03', label: 'YANBU MASHAD' },
-  { value: 'YB04', label: 'YANBU BANDAR' },
-  { value: 'YB05', label: 'YANBU KING KHALID' },
-];
-
 type Props = {
+  data: any;
   value?: any;
   setValue: (value: Invoice) => void;
 };
 
-const DropdownComponent = ({ value, setValue }: Props) => {
+const DropdownComponent = ({ value, setValue, data }: Props) => {
   const [isFocus, setIsFocus] = useState(false);
 
   const renderLabel = () => {
@@ -70,7 +39,7 @@ const DropdownComponent = ({ value, setValue }: Props) => {
         onFocus={() => setIsFocus(true)}
         onBlur={() => setIsFocus(false)}
         onChange={(item) => {
-          setValue({ ...value,branch_code: item?.value });
+          setValue({ ...value, branch_id: item?.value });
           setIsFocus(false);
         }}
         renderLeftIcon={() => (

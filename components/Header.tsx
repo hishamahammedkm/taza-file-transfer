@@ -13,7 +13,7 @@ interface Props {
 
 const Header = ({ title }: Props) => {
   const { session, loading } = useAuth();
-  console.log('session---', session?.user.email, loading);
+
   const theme = useTheme();
 
   const MORE_ICON = Platform.OS === 'ios' ? 'dots-horizontal' : 'dots-vertical';
