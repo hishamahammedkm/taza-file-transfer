@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import {  useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DropdownComponent from '~/components/BrachSelector';
 import DTPicker from '~/components/DatetimePicker';
 
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 import * as FileSystem from 'expo-file-system';
 import { randomUUID } from 'expo-crypto';
 import { supabase } from '~/utils/supabase';
@@ -15,22 +15,11 @@ import Header from '~/components/Header';
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
-  // const { data } = useBranches();
-
-  // const branches = data?.map((branch) => ({ value: branch.id, label: branch.name }));
-  const branches = [
-    { value: 1, label: 'SHARAYA' },
-    { value: 2, label: 'SANAYA' },
-    { value: 3, label: 'HADA' },
-  ];
-
-  const { mutate: insertInvoice, isSuccess, error, isPending, status } = useInsertInvoice();
-  // console.log('isSuccess, error, isPending, status---', isSuccess, error, isPending, status);
+  const { data: branchesData, error: branchesError } = useBranches();
 
   const [invoice, setInvoice] = useState<Invoice>({
     invoice_number: '',
     branch_id: '',
-
     remarks: '',
     file_path: '',
     date_time: new Date(),
@@ -38,10 +27,13 @@ export default function Home() {
 
   const [image, setImage] = useState<string | null>(null);
 
+  const { mutate: insertInvoice, isSuccess, error, isPending, status } = useInsertInvoice();
+
+  const branches = branchesData?.map((branch) => ({ value: branch.id, label: branch.name })) || [];
+
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      // allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
@@ -50,6 +42,7 @@ export default function Home() {
       setImage(result.assets[0].uri);
     }
   };
+
   const uploadImage = async () => {
     if (!image?.startsWith('file://')) {
       return;
@@ -77,16 +70,10 @@ export default function Home() {
     if (loading) return;
     setLoading(true);
     const file_path = await uploadImage();
-    // if (!file_path) {
-    //   return;
-    // }
-
     insertInvoice(
       { ...invoice, file_path },
       {
         onSuccess: () => {
-          console.log('ssssss');
-
           setImage(null);
           setInvoice({
             invoice_number: '',
@@ -95,16 +82,14 @@ export default function Home() {
             file_path: '',
             date_time: new Date(),
           });
+          Alert.alert('Success');
         },
       }
     );
     setLoading(false);
-    Alert.alert('Success');
   };
 
   return (
-    // hide header using stack
-
     <>
       <Header title="Add Invoice" />
       <View className="flex h-screen gap-5 bg-red-500 p-5">
@@ -112,7 +97,7 @@ export default function Home() {
           className="text-red-500"
           style={styles.input}
           placeholder="Enter invoice number..."
-          placeholderTextColor="#FFB03B" // Light yellow color similar to the border in the logo
+          placeholderTextColor="#FFB03B"
           value={invoice.invoice_number}
           onChangeText={(text) => setInvoice({ ...invoice, invoice_number: text })}
         />
@@ -128,7 +113,6 @@ export default function Home() {
         )}
         {image && <Image source={{ uri: image }} style={styles.image} />}
 
-        {/* text area */}
         <TextInput
           className="rounded-lg bg-white p-3 font-bold text-red-500 placeholder:text-yellow-500 "
           placeholder="Remarks"
@@ -137,14 +121,12 @@ export default function Home() {
           numberOfLines={4}
           onChangeText={(text) => setInvoice({ ...invoice, remarks: text })}
           value={invoice.remarks}
-          textAlignVertical="top" // Ensures the text starts from the top
+          textAlignVertical="top"
         />
 
         <TouchableOpacity
           className="mt-5 items-center rounded-full bg-yellow-400 px-8 py-3"
-          onPress={() => {
-            handleSubmit();
-          }}>
+          onPress={handleSubmit}>
           <Text className="text-red-500" style={styles.submitButtonText}>
             {loading ? 'Submitting...' : 'Submit'}
           </Text>
