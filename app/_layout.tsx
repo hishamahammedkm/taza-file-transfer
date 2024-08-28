@@ -4,6 +4,7 @@ import { Stack, SplashScreen } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
 import AuthProvider from '~/providers/AuthProvider';
 import QueryProvider from '~/providers/QueryProvider';
+import { SocketProvider } from '~/providers/SocketContext';
 
 // export {
 //   // Catch any errors thrown by the Layout component.
@@ -16,16 +17,16 @@ import QueryProvider from '~/providers/QueryProvider';
 export default function Layout() {
   return (
     <PaperProvider>
-    <AuthProvider>
-      <QueryProvider>
-        <Stack>
-          <Stack.Screen name="postInvoice" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        </Stack>
-      </QueryProvider>
-    </AuthProvider>
+      <AuthProvider>
+        <SocketProvider>
+          <QueryProvider>
+            <Stack>
+              <Stack.Screen name="postInvoice" options={{ headerShown: false }} />
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            </Stack>
+          </QueryProvider>
+        </SocketProvider>
+      </AuthProvider>
     </PaperProvider>
-
-
   );
 }

@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/database.types';
 
-const ExpoSecureStoreAdapter = {
+export const ExpoSecureStoreAdapter = {
   getItem: (key: string) => {
     return SecureStore.getItemAsync(key);
   },
@@ -17,7 +17,6 @@ const ExpoSecureStoreAdapter = {
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON || '';
-
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
