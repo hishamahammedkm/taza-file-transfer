@@ -34,15 +34,47 @@ export default function AuthProvider({ children }: PropsWithChildren) {
       } = await supabase.auth.getSession();
 
       setSession(session);
+      setToken(session?.access_token!);
+      ExpoSecureStoreAdapter.setItem('token', session?.access_token!);
 
       if (session) {
-        // fetch profile
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        setProfile(data || null);
+        const setUp = async () => {
+          const Suser = await supabase.auth.getUser();
+          // console.log('Suser', Suser);
+          let user: UserInterface | null;
+
+          if (Suser) {
+            console.log('S user got');
+
+            axios.defaults.headers.common['Authorization'] = `Bearer ${session.access_token}`;
+
+            const { data } = await axios.get(
+              `${process.env.EXPO_PUBLIC_SERVER_URI}/chat-app/chats/_id/${Suser.data.user?.id!}`
+            );
+
+            if (data.data._id) {
+              user = {
+                _id: data.data._id!,
+                email: Suser.data.user?.email!,
+                username: Suser.data.user?.email!,
+                createdAt: Suser.data.user?.created_at!,
+                updatedAt: Suser.data.user?.updated_at!,
+                avatar: {
+                  _id: Suser.data.user?.id!,
+                  url: '',
+                  localPath: '',
+                },
+              };
+
+              setUser(user);
+            }
+          } else {
+            console.log('user not found');
+
+            setUser(null);
+          }
+        };
+        setUp();
       }
 
       setLoading(false);
@@ -51,58 +83,49 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     fetchSession();
     supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-    });
-  }, []);
-  useEffect(() => {
-    const getUser = async () => {
-      const _token = (await supabase.auth.getSession()).data.session?.access_token;
-      console.log('token from auth context---', _token);
-      if (_token) {
-        ExpoSecureStoreAdapter.setItem('token', _token);
-      }
+      setToken(session?.access_token!);
+      ExpoSecureStoreAdapter.setItem('token', session?.access_token!);
 
-      setToken(_token!);
+      if (session) {
+        const setUp = async () => {
+          const Suser = await supabase.auth.getUser();
+          // console.log('Suser', Suser);
+          let user: UserInterface | null;
 
-      const Suser = await supabase.auth.getUser();
-      // console.log('Suser', Suser);
-      let user: UserInterface | null;
-      console.log('here');
+          if (Suser) {
+            console.log('S user got');
 
-      if (Suser) {
-        console.log('here 22');
+            axios.defaults.headers.common['Authorization'] = `Bearer ${session.access_token}`;
 
-        axios.defaults.headers.common['Authorization'] = `Bearer ${_token}`;
-        console.log();
+            const { data } = await axios.get(
+              `${process.env.EXPO_PUBLIC_SERVER_URI}/chat-app/chats/_id/${Suser.data.user?.id!}`
+            );
 
-        const { data } = await axios.get(
-          `${process.env.EXPO_PUBLIC_SERVER_URI}/chat-app/chats/_id/${Suser.data.user?.id!}`
-        );
+            if (data.data._id) {
+              user = {
+                _id: data.data._id!,
+                email: Suser.data.user?.email!,
+                username: Suser.data.user?.email!,
+                createdAt: Suser.data.user?.created_at!,
+                updatedAt: Suser.data.user?.updated_at!,
+                avatar: {
+                  _id: Suser.data.user?.id!,
+                  url: '',
+                  localPath: '',
+                },
+              };
 
-        if (!data.data._id) {
-          console.log(' Chat server not responding');
-        }
+              setUser(user);
+            }
+          } else {
+            console.log('user not found');
 
-        user = {
-          _id: data.data._id!,
-          email: Suser.data.user?.email!,
-          username: Suser.data.user?.email!,
-          createdAt: Suser.data.user?.created_at!,
-          updatedAt: Suser.data.user?.updated_at!,
-          avatar: {
-            _id: Suser.data.user?.id!,
-            url: '',
-            localPath: '',
-          },
+            setUser(null);
+          }
         };
-
-        setUser(user);
-      } else {
-        console.log('user not found');
-
-        setUser(null);
+        setUp();
       }
-    };
-    getUser();
+    });
   }, []);
 
   return (

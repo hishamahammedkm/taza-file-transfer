@@ -15,8 +15,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   async function (config) {
     try {
-      const token = await ExpoSecureStoreAdapter.getItem('token');
-      // const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
 
       console.log('token from supabse at axios ini:', token);
 
@@ -92,17 +91,13 @@ const getChatMessages = (chatId: string) => {
 };
 
 const sendMessage = async (chatId: string, content: string, attachments: File[]) => {
-  console.log('sendMessage api:', chatId);
   const formData = new FormData();
   if (content) {
     formData.append('content', content);
   }
   attachments?.forEach((file) => {
-    console.log('file:---', file);
     formData.append('attachments', file);
   });
-  console.log('formData:', formData);
-  console.log('chatId:', chatId);
 
   try {
     return apiClient.post(`/chat-app/messages/${chatId}`, formData, {

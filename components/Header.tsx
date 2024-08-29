@@ -39,8 +39,9 @@ const Header = ({ title }: Props) => {
 
         <Menu.Item
           onPress={async () => {
-            await supabase.auth.signOut();
+            supabase.auth.signOut();
             router.replace('/sign-in');
+            
           }}
           title="Log out"
         />
