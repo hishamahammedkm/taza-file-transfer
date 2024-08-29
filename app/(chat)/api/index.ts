@@ -98,19 +98,20 @@ const sendMessage = async (chatId: string, content: string, attachments: File[])
     formData.append('content', content);
   }
   attachments?.forEach((file) => {
+    console.log('file:---', file);
     formData.append('attachments', file);
   });
   console.log('formData:', formData);
   console.log('chatId:', chatId);
 
   try {
-    const response = await apiClient.post(`/chat-app/messages/${chatId}`, formData, {
+    return apiClient.post(`/chat-app/messages/${chatId}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    console.log('API Response:', response.data);
-    return response.data;
+    // console.log('API Response:', response.data);
+    // return response.data;
   } catch (error) {
     console.error('API Error:', error);
     if (axios.isAxiosError(error)) {
