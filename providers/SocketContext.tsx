@@ -8,7 +8,7 @@ import socketio from 'socket.io-client';
 // Function to establish a socket connection with authorization token
 const getSocket = async () => {
   const token = (await supabase.auth.getSession()).data.session?.access_token;
-  console.log('token from socket context---', token);
+//   console.log('token from socket context---', token);
 
   // Create a socket connection with the provided URI and authentication
   return socketio(process.env.EXPO_PUBLIC_SOCKET_URI!, {
@@ -37,7 +37,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
     // Define an async function to get the socket and set it in state
     const initializeSocket = async () => {
       const socketInstance = await getSocket();
-      console.log('socketInstance---', socketInstance);
+    //   console.log('socketInstance---', reeeee);
 
       setSocket(socketInstance);
     };

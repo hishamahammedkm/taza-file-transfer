@@ -56,20 +56,26 @@ export default function AuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     const getUser = async () => {
       const _token = (await supabase.auth.getSession()).data.session?.access_token;
+      console.log('token from auth context---', _token);
       if (_token) {
         ExpoSecureStoreAdapter.setItem('token', _token);
       }
-      console.log('_token from auth context', _token);
 
       setToken(_token!);
 
       const Suser = await supabase.auth.getUser();
+      // console.log('Suser', Suser);
       let user: UserInterface | null;
+      console.log('here');
+
       if (Suser) {
+        console.log('here 22');
+
         axios.defaults.headers.common['Authorization'] = `Bearer ${_token}`;
+        console.log();
 
         const { data } = await axios.get(
-          `${process.env.NEXT_PUBLIC_SERVER_URI}/chat-app/chats/_id/${Suser.data.user?.id!}`
+          `${process.env.EXPO_PUBLIC_SERVER_URI}/chat-app/chats/_id/${Suser.data.user?.id!}`
         );
 
         if (!data.data._id) {
@@ -91,6 +97,8 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
         setUser(user);
       } else {
+        console.log('user not found');
+
         setUser(null);
       }
     };
