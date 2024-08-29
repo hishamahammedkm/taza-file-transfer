@@ -35,7 +35,6 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
       setSession(session);
       setToken(session?.access_token!);
-      ExpoSecureStoreAdapter.setItem('token', session?.access_token!);
 
       if (session) {
         const setUp = async () => {
@@ -84,7 +83,6 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setToken(session?.access_token!);
-      ExpoSecureStoreAdapter.setItem('token', session?.access_token!);
 
       if (session) {
         const setUp = async () => {
