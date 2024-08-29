@@ -26,7 +26,6 @@ import Typing from './components/chat/Typing';
 import Input from './components/Input';
 import { useSocket } from '~/providers/SocketContext';
 import { useAuth } from '~/providers/AuthProvider';
-import { router } from 'expo-router';
 
 const CONNECTED_EVENT = 'connected';
 const DISCONNECT_EVENT = 'disconnect';
@@ -302,62 +301,149 @@ const ChatPage = () => {
         }}
       />
 
-      <View className="flex-1 border-r border-taza-orange">
-        <View className="sticky top-0 z-10 flex-row items-center justify-between bg-white px-4 py-4">
-          <TextInput
-            placeholder="Search user or group..."
-            value={localSearchQuery}
-            onChangeText={(text) => setLocalSearchQuery(text.toLowerCase())}
-            className="mr-2 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-taza-dark"
-          />
-          <TouchableOpacity
-            onPress={() => setOpenAddChat(true)}
-            className="rounded-xl bg-taza-orange px-3 py-2">
-            <Text className="font-bold text-white">+ Add chat</Text>
-          </TouchableOpacity>
-        </View>
-        {loadingChats ? (
-          <View className="flex-1 items-center justify-center">
-            <Typing />
+      <View className="flex-1 flex-row bg-white">
+        <View className="w-1/3 border-r border-taza-orange">
+          <View className="sticky top-0 z-10 flex-row items-center justify-between bg-white px-4 py-4">
+            <TextInput
+              placeholder="Search user or group..."
+              value={localSearchQuery}
+              onChangeText={(text) => setLocalSearchQuery(text.toLowerCase())}
+              className="mr-2 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-taza-dark"
+            />
+            <TouchableOpacity
+              onPress={() => setOpenAddChat(true)}
+              className="rounded-xl bg-taza-orange px-3 py-2">
+              <Text className="font-bold text-white">+ Add chat</Text>
+            </TouchableOpacity>
           </View>
-        ) : (
-          <FlatList
-            data={chats.filter((chat) =>
-              localSearchQuery
-                ? getChatObjectMetadata(chat, user!)
-                    .title?.toLocaleLowerCase()
-                    ?.includes(localSearchQuery)
-                : true
-            )}
-            renderItem={({ item: chat }) => (
-              <ChatItem
-                chat={chat}
-                isActive={chat._id === currentChat.current?._id}
-                unreadCount={unreadMessages.filter((n) => n.chat === chat._id).length}
-                onClick={(chat) => {
-                  if (currentChat.current?._id && currentChat.current?._id === chat._id) return;
-                  ExpoSecureStoreAdapter.setItem('currentChat', JSON.stringify(chat));
-                  currentChat.current = chat;
-                  setMessage('');
-                  getMessages();
+          {loadingChats ? (
+            <View className="flex-1 items-center justify-center">
+              <Typing />
+            </View>
+          ) : (
+            <FlatList
+              data={chats.filter((chat) =>
+                localSearchQuery
+                  ? getChatObjectMetadata(chat, user!)
+                      .title?.toLocaleLowerCase()
+                      ?.includes(localSearchQuery)
+                  : true
+              )}
+              renderItem={({ item: chat }) => (
+                <ChatItem
+                  chat={chat}
+                  isActive={chat._id === currentChat.current?._id}
+                  unreadCount={unreadMessages.filter((n) => n.chat === chat._id).length}
+                  onClick={(chat) => {
+                    if (currentChat.current?._id && currentChat.current?._id === chat._id) return;
+                    ExpoSecureStoreAdapter.setItem('currentChat', JSON.stringify(chat));
+                    currentChat.current = chat;
+                    setMessage('');
+                    getMessages();
+                  }}
+                  onChatDelete={(chatId) => {
+                    setChats((prev) => prev.filter((chat) => chat._id !== chatId));
+                    if (currentChat.current?._id === chatId) {
+                      currentChat.current = null;
+                      ExpoSecureStoreAdapter.removeItem('currentChat');
+                    }
+                  }}
+                />
+              )}
+              keyExtractor={(item) => item._id}
+            />
+          )}
+        </View>
+        <View className="w-2/3 border-l border-taza-orange bg-white">
+          {currentChat.current && currentChat.current?._id ? (
+            <>
+              <View className="sticky top-0 z-20 w-full flex-row items-center justify-between border-b border-taza-orange bg-taza-red p-4">
+                <View className="flex-row items-center">
+                  {currentChat.current.isGroupChat ? (
+                    <View className="relative h-12 w-12 flex-shrink-0 flex-row items-center justify-start">
+                      {currentChat.current.participants.slice(0, 3).map((participant, i) => (
+                        <Image
+                          key={participant._id}
+                          source={{ uri: participant.avatar.url }}
+                          className="absolute h-9 w-9 rounded-full border border-white"
+                          style={{ left: i * 8, zIndex: 3 - i }}
+                        />
+                      ))}
+                    </View>
+                  ) : (
+                    <Image
+                      className="h-14 w-14 flex-shrink-0 rounded-full"
+                      source={{ uri: getChatObjectMetadata(currentChat.current, user!).avatar }}
+                    />
+                  )}
+                  <View className="ml-3">
+                    <Text className="font-bold text-white">
+                      {getChatObjectMetadata(currentChat.current, user!).title}
+                    </Text>
+                    <Text className="text-sm text-taza-light">
+                      {getChatObjectMetadata(currentChat.current, user!).description}
+                    </Text>
+                  </View>
+                </View>
+              </View>
 
-                  router.push({
-                    pathname: '/(chat)/[id]',
-                    params: { id: chat._id, currentChat: JSON.stringify(currentChat) },
-                  });
-                }}
-                onChatDelete={(chatId) => {
-                  setChats((prev) => prev.filter((chat) => chat._id !== chatId));
-                  if (currentChat.current?._id === chatId) {
-                    currentChat.current = null;
-                    ExpoSecureStoreAdapter.removeItem('currentChat');
-                  }
-                }}
+              <FlatList
+                inverted
+                className="p-4"
+                data={messages}
+                renderItem={({ item: msg }) => (
+                  <MessageItem
+                    isOwnMessage={msg.sender?._id === user?._id}
+                    isGroupChatMessage={currentChat.current?.isGroupChat}
+                    message={msg}
+                    deleteChatMessage={deleteChatMessage}
+                  />
+                )}
+                keyExtractor={(item) => item._id}
+                ListHeaderComponent={isTyping ? <Typing /> : null}
               />
-            )}
-            keyExtractor={(item) => item._id}
-          />
-        )}
+
+              {attachedFiles.length > 0 && (
+                <ScrollView horizontal className="p-4">
+                  {attachedFiles.map((file, i) => (
+                    <View key={i} className="relative mr-2 h-32 w-32 rounded-xl">
+                      <TouchableOpacity
+                        className="absolute -right-2 -top-2 z-10"
+                        onPress={() => {
+                          setAttachedFiles(attachedFiles.filter((_, ind) => ind !== i));
+                        }}>
+                        <XCircleIcon color="white" size={24} />
+                      </TouchableOpacity>
+                      <Image className="h-full w-full rounded-xl" source={{ uri: file.uri }} />
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+
+              <View className="w-full flex-row items-center justify-between border-t border-taza-orange bg-taza-light p-4">
+                <TouchableOpacity onPress={pickImage} className="rounded-full bg-taza-orange p-4">
+                  <PaperClipIcon color="white" size={24} />
+                </TouchableOpacity>
+                <TextInput
+                  placeholder="Message"
+                  value={message}
+                  onChangeText={handleOnMessageChange}
+                  className="mx-2 flex-1 rounded-full bg-white px-4 py-2 text-taza-dark"
+                />
+                <TouchableOpacity
+                  onPress={sendChatMessage}
+                  disabled={!message && attachedFiles.length <= 0}
+                  className="rounded-full bg-taza-red p-4">
+                  <PaperAirplaneIcon color="white" size={24} />
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <View className="flex-1 items-center justify-center">
+              <Text className="text-taza-dark">No chat selected</Text>
+            </View>
+          )}
+        </View>
       </View>
     </KeyboardAvoidingView>
   );

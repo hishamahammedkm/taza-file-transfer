@@ -117,8 +117,11 @@ const ChatPage = () => {
   };
 
   const sendChatMessage = async () => {
+    console.log('send msg');
+
     if (!currentChat.current?._id || !socket) return;
     socket.emit(STOP_TYPING_EVENT, currentChat.current?._id);
+    console.log('enven send msg--', currentChat.current?._id);
 
     await requestHandler(
       async () => await sendMessage(currentChat.current?._id || '', message, attachedFiles),
