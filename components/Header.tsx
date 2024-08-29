@@ -21,6 +21,8 @@ const Header = ({ title }: Props) => {
   return (
     <Appbar.Header>
       {/* <Appbar.Action icon="menu" onPress={() => {}} /> */}
+      {/* go back screen */}
+      <Appbar.BackAction onPress={() => router.back()} />
 
       <Appbar.Content title={title} />
 
@@ -41,6 +43,13 @@ const Header = ({ title }: Props) => {
             router.replace('/sign-in');
           }}
           title="Log out"
+        />
+        <Menu.Item
+          onPress={async () => {
+            await supabase.auth.signOut();
+            router.push('/(chat)');
+          }}
+          title="Chat"
         />
 
         <Divider />

@@ -13,16 +13,19 @@ const apiClient = axios.create({
 
 // Add an interceptor to set authorization header with user token before requests
 apiClient.interceptors.request.use(
-  function (config) {
-    // Retrieve user token from local storage
+  async function (config) {
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
 
-    const token = await ExpoSecureStoreAdapter.get('token');
-    // or
+      console.log('token from supabse at axios ini:', token);
 
-    // console.log('token-from axios initial---', token);
-
-    // Set authorization header with bearer token
-    config.headers.Authorization = `Bearer ${token}`;
+      // Set authorization header with bearer token
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error('Error retrieving token:', error);
+    }
     return config;
   },
   function (error) {

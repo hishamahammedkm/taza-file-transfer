@@ -13,7 +13,7 @@ const index = () => {
   if (!session) {
     return <Redirect href={'(auth)/sign-in'} />;
   }
-  return <Redirect href={'(chat)/screen'} />;
+  return <Redirect href={'(chat)'} />;
 
   return <Redirect href={'/postInvoice'} />;
 };
