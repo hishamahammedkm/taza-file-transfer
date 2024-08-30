@@ -72,14 +72,23 @@ const ChatDetailsScreen = () => {
   };
 
   const deleteChatMessage = async (message: ChatMessageInterface) => {
-    await requestHandler(
-      async () => await deleteMessage(message.chat, message._id),
-      null,
-      (res) => {
-        setMessages((prev) => prev.filter((msg) => msg._id !== res.data._id));
-      },
-      alert
-    );
+    try {
+      await requestHandler(
+        async () => await deleteMessage(message.chat, message._id),
+        null,
+        (res) => {
+          setMessages((prev) => prev.filter((msg) => msg._id !== res.data._id));
+          console.log('Message deleted successfully');
+        },
+        (error) => {
+          console.error('Error deleting message:', error);
+          throw error; // Re-throw the error to be caught in the MessageItem component
+        }
+      );
+    } catch (error) {
+      console.error('Error in deleteChatMessage:', error);
+      throw error; // Re-throw the error to be caught in the MessageItem component
+    }
   };
 
   const handleOnMessageChange = (text: string) => {
@@ -217,9 +226,9 @@ const ChatDetailsScreen = () => {
           data={messages}
           renderItem={({ item: msg }) => (
             <MessageItem
-              isOwnMessage={msg.sender?._id === user?._id}
               isGroupChatMessage={currentChat?.isGroupChat}
               message={msg}
+              isOwnMessage={msg.sender?._id === user?._id}
               deleteChatMessage={deleteChatMessage}
             />
           )}

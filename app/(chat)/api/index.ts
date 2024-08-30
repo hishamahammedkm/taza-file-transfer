@@ -17,7 +17,7 @@ apiClient.interceptors.request.use(
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token;
 
-      console.log('token from supabse at axios ini:', token);
+      // console.log('token from supabse at axios ini:', token);
 
       // Set authorization header with bearer token
       if (token) {
@@ -117,6 +117,7 @@ const sendMessage = async (chatId: string, content: string, attachments: File[])
   }
 };
 const deleteMessage = (chatId: string, messageId: string) => {
+  console.log('chatId--messageId:', chatId, '----', messageId);
   return apiClient.delete(`/chat-app/messages/${chatId}/${messageId}`);
 };
 

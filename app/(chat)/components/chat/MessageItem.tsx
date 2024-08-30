@@ -5,29 +5,107 @@ import moment from 'moment';
 import { ChatMessageInterface } from 'interfaces/chat';
 
 const MessageItem: React.FC<{
-  isOwnMessage?: boolean;
-  isGroupChatMessage?: boolean;
+  isOwnMessage: boolean;
+  isGroupChatMessage: boolean;
   message: ChatMessageInterface;
-  deleteChatMessage: (message: ChatMessageInterface) => void;
+  deleteChatMessage: (message: ChatMessageInterface) => Promise<void>;
 }> = ({ message, isOwnMessage, isGroupChatMessage, deleteChatMessage }) => {
   const [resizedImage, setResizedImage] = useState<string | null>(null);
-  const [openOptions, setOpenOptions] = useState<boolean>(false);
+  const [showDeleteOption, setShowDeleteOption] = useState(false);
 
   const handleDeleteMessage = () => {
-    Alert.alert('Delete Message', 'Are you sure you want to delete this message?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'OK', onPress: () => deleteChatMessage(message) },
-    ]);
+    console.log('Attempting to delete message:', message._id);
+    Alert.alert(
+      'Delete Message',
+      'Are you sure you want to delete this message?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteChatMessage(message);
+              console.log('Message deleted successfully');
+              setShowDeleteOption(false);
+            } catch (error) {
+              console.error('Error deleting message:', error);
+              Alert.alert('Error', 'Failed to delete message. Please try again.');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   return (
-    <>
-      <Modal visible={!!resizedImage} transparent={true} animationType="fade">
-        <View className="flex-1 items-center justify-center bg-black/70 p-8">
+    <View className={`mb-4 ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+      <View className={`max-w-[80%] flex-row items-end ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+        <Image
+          source={{ uri: message.sender?.avatar?.url }}
+          className="h-8 w-8 rounded-full"
+        />
+        <View
+          className={`mx-2 rounded-2xl p-3 ${
+            isOwnMessage ? 'bg-taza-red' : 'bg-taza-orange'
+          }`}
+        >
+          {isGroupChatMessage && !isOwnMessage && (
+            <Text className="mb-1 text-xs font-bold text-white">
+              {message.sender?.username}
+            </Text>
+          )}
+          
+          {message.content && (
+            <Text className="text-white">{message.content}</Text>
+          )}
+          
+          {message.attachments?.length > 0 && (
+            <View className="mt-2 flex-row flex-wrap">
+              {message.attachments.map((file) => (
+                <TouchableOpacity
+                  key={file._id}
+                  onPress={() => setResizedImage(file.url)}
+                  className="m-1 h-20 w-20 overflow-hidden rounded-lg"
+                >
+                  <Image source={{ uri: file.url }} className="h-full w-full" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          
+          <Text className="mt-1 text-right text-xs text-white">
+            {moment(message.createdAt).format('HH:mm')}
+          </Text>
+        </View>
+      </View>
+      
+      {isOwnMessage && (
+        <TouchableOpacity
+          onPress={() => setShowDeleteOption(!showDeleteOption)}
+          className="mt-1 p-2"
+        >
+          <Ionicons name="ellipsis-horizontal" size={20} color="#888" />
+        </TouchableOpacity>
+      )}
+      
+      {showDeleteOption && isOwnMessage && (
+        <TouchableOpacity
+          onPress={handleDeleteMessage}
+          className="mt-1 rounded-full bg-red-500 px-3 py-1"
+        >
+          <Text className="text-white">Delete</Text>
+        </TouchableOpacity>
+      )}
+
+      <Modal visible={!!resizedImage} transparent animationType="fade">
+        <View className="flex-1 items-center justify-center bg-black/70">
           <TouchableOpacity
-            className="absolute right-5 top-5 z-10"
-            onPress={() => setResizedImage(null)}>
-            <Ionicons name="close" size={36} color="white" />
+            onPress={() => setResizedImage(null)}
+            className="absolute right-4 top-4 z-10"
+          >
+            <Ionicons name="close" size={30} color="white" />
           </TouchableOpacity>
           <Image
             source={{ uri: resizedImage || '' }}
@@ -36,91 +114,7 @@ const MessageItem: React.FC<{
           />
         </View>
       </Modal>
-
-      <View
-        className={`max-w-lg flex-row items-end gap-3 ${isOwnMessage ? 'self-end' : 'self-start'}`}>
-        <Image
-          source={{ uri: message.sender?.avatar?.url }}
-          className={`h-7 w-7 rounded-full ${isOwnMessage ? 'order-last' : 'order-first'}`}
-        />
-        <View
-          className={`rounded-3xl p-4 ${
-            isOwnMessage ? 'bg-taza-red rounded-br-none' : 'bg-taza-orange rounded-bl-none'
-          }`}>
-          {isGroupChatMessage && !isOwnMessage && (
-            <Text
-              className={`mb-2 text-xs font-semibold ${
-                message.sender.username.length % 2 === 0 ? 'text-taza-red' : 'text-taza-orange'
-              }`}>
-              {message.sender?.username}
-            </Text>
-          )}
-
-          {message?.attachments?.length > 0 && (
-            <View>
-              {isOwnMessage && (
-                <TouchableOpacity
-                  className="self-center p-1"
-                  onPress={() => setOpenOptions(!openOptions)}>
-                  <Ionicons name="ellipsis-vertical" size={24} color="#FFF0E0" />
-                </TouchableOpacity>
-              )}
-
-              <View className={`flex-row flex-wrap ${message.content ? 'mb-6' : ''}`}>
-                {message.attachments?.map((file) => (
-                  <TouchableOpacity
-                    key={file._id}
-                    className="relative m-1 aspect-square overflow-hidden rounded-xl"
-                    onPress={() => setResizedImage(file.url)}>
-                    <Image source={{ uri: file.url }} className="h-full w-full" />
-                    <View className="absolute inset-0 items-center justify-center bg-black/60 opacity-0 active:opacity-100">
-                      <Ionicons name="search" size={24} color="white" />
-                      <TouchableOpacity onPress={() => Linking.openURL(file.url)}>
-                        <Ionicons name="download" size={24} color="white" />
-                      </TouchableOpacity>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {message.content && (
-            <View className="relative flex-row justify-between">
-              {isOwnMessage && (
-                <TouchableOpacity
-                  className="self-center"
-                  onPress={() => setOpenOptions(!openOptions)}>
-                  <Ionicons name="ellipsis-vertical" size={16} color="#FFF0E0" />
-                </TouchableOpacity>
-              )}
-              <Text className="text-sm text-white">{message.content}</Text>
-            </View>
-          )}
-
-          <Text
-            className={`mt-1.5 self-end text-xs ${
-              isOwnMessage ? 'text-taza-light' : 'text-taza-dark'
-            }`}>
-            {message.attachments?.length > 0 && (
-              <Ionicons name="attach" size={16} color={isOwnMessage ? '#FFF0E0' : '#333333'} />
-            )}
-            {moment(message.updatedAt).add('TIME_ZONE', 'hours').fromNow(true)} ago
-          </Text>
-        </View>
-      </View>
-
-      {openOptions && (
-        <TouchableOpacity
-          className="bg-taza-dark border-taza-orange absolute bottom-full right-0 mb-2 rounded-2xl border p-2 shadow"
-          onPress={handleDeleteMessage}>
-          <View className="flex-row items-center">
-            <Ionicons name="trash" size={16} color="#FF4D4F" />
-            <Text className="text-taza-red ml-2">Delete Message</Text>
-          </View>
-        </TouchableOpacity>
-      )}
-    </>
+    </View>
   );
 };
 
