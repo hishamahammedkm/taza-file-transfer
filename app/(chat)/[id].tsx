@@ -1,112 +1,41 @@
-import React, { useEffect, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
-  Image,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, FlatList, TouchableOpacity, TextInput, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { PaperAirplaneIcon, PaperClipIcon, XCircleIcon } from 'react-native-heroicons/solid';
-
 import * as ImagePicker from 'expo-image-picker';
-import { ExpoSecureStoreAdapter, supabase } from '~/utils/supabase';
-
+import { ExpoSecureStoreAdapter } from '~/utils/supabase';
 import { ChatListItemInterface, ChatMessageInterface } from 'interfaces/chat';
 import { getChatObjectMetadata, requestHandler } from './lib/index';
-
-import { deleteMessage, getChatMessages, getUserChats, sendMessage } from './api';
-
+import { deleteMessage, getChatMessages, sendMessage } from './api';
 import MessageItem from './components/chat/MessageItem';
 import Typing from './components/chat/Typing';
-
 import { useSocket } from '~/providers/SocketContext';
 import { useAuth } from '~/providers/AuthProvider';
-import { useLocalSearchParams } from 'expo-router';
 
-const CONNECTED_EVENT = 'connected';
-const DISCONNECT_EVENT = 'disconnect';
-const JOIN_CHAT_EVENT = 'joinChat';
-const NEW_CHAT_EVENT = 'newChat';
-const TYPING_EVENT = 'typing';
-const STOP_TYPING_EVENT = 'stopTyping';
-const MESSAGE_RECEIVED_EVENT = 'messageReceived';
-const LEAVE_CHAT_EVENT = 'leaveChat';
-const UPDATE_GROUP_NAME_EVENT = 'updateGroupName';
-const MESSAGE_DELETE_EVENT = 'messageDeleted';
-
-const ChatPage = () => {
-  const { user, token } = useAuth();
-  //   // console.log('user, token--', user, token);
-
+const ChatDetailsScreen = () => {
+  const { id } = useLocalSearchParams();
+  const router = useRouter();
+  const { user } = useAuth();
   const { socket } = useSocket();
 
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const [isConnected, setIsConnected] = useState(false);
-
-  const [loadingChats, setLoadingChats] = useState(false);
+  const [currentChat, setCurrentChat] = useState<ChatListItemInterface | null>(null);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const [chats, setChats] = useState<ChatListItemInterface[]>([]);
   const [messages, setMessages] = useState<ChatMessageInterface[]>([]);
-  const [unreadMessages, setUnreadMessages] = useState<ChatMessageInterface[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [selfTyping, setSelfTyping] = useState(false);
   const [message, setMessage] = useState('');
-
   const [attachedFiles, setAttachedFiles] = useState<any[]>([]);
 
-  const updateChatLastMessage = (chatToUpdateId: string, message: ChatMessageInterface) => {
-    const chatToUpdate = chats.find((chat) => chat._id === chatToUpdateId)!;
-    chatToUpdate.lastMessage = message;
-    chatToUpdate.updatedAt = message?.updatedAt;
-    setChats([chatToUpdate, ...chats.filter((chat) => chat._id !== chatToUpdateId)]);
-  };
-
-  const updateChatLastMessageOnDeletion = (
-    chatToUpdateId: string,
-    message: ChatMessageInterface
-  ) => {
-    const chatToUpdate = chats.find((chat) => chat._id === chatToUpdateId)!;
-    if (chatToUpdate.lastMessage?._id === message._id) {
-      requestHandler(
-        async () => getChatMessages(chatToUpdateId),
-        null,
-        (req) => {
-          const { data } = req;
-          chatToUpdate.lastMessage = data[0];
-          setChats([...chats]);
-        },
-        alert
-      );
-    }
-  };
-
-  const getChats = async () => {
-    requestHandler(
-      async () => await getUserChats(),
-      setLoadingChats,
-      (res) => {
-        const { data } = res;
-
-        setChats(data || []);
-      },
-      alert
-    );
-  };
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const getMessages = async () => {
-    if (!currentChat.current?._id) return alert('No chat is selected');
+    if (!currentChat?._id) return alert('No chat is selected');
     if (!socket) return alert('Socket not available');
 
-    socket.emit(JOIN_CHAT_EVENT, currentChat.current?._id);
-    setUnreadMessages(unreadMessages.filter((msg) => msg.chat !== currentChat.current?._id));
+    socket.emit('joinChat', currentChat._id);
 
     requestHandler(
-      async () => await getChatMessages(currentChat.current?._id || ''),
+      async () => await getChatMessages(currentChat._id || ''),
       setLoadingMessages,
       (res) => {
         const { data } = res;
@@ -117,17 +46,16 @@ const ChatPage = () => {
   };
 
   const sendChatMessage = async () => {
-    if (!currentChat.current?._id || !socket) return;
-    socket.emit(STOP_TYPING_EVENT, currentChat.current?._id);
+    if (!currentChat?._id || !socket) return;
+    socket.emit('stopTyping', currentChat._id);
 
     await requestHandler(
-      async () => await sendMessage(currentChat.current?._id || '', message, attachedFiles),
+      async () => await sendMessage(currentChat._id || '', message, attachedFiles),
       null,
       (res) => {
         setMessage('');
         setAttachedFiles([]);
         setMessages((prev) => [res.data, ...prev]);
-        updateChatLastMessage(currentChat.current?._id || '', res.data);
       },
       alert
     );
@@ -139,7 +67,6 @@ const ChatPage = () => {
       null,
       (res) => {
         setMessages((prev) => prev.filter((msg) => msg._id !== res.data._id));
-        updateChatLastMessageOnDeletion(message.chat, message);
       },
       alert
     );
@@ -148,11 +75,11 @@ const ChatPage = () => {
   const handleOnMessageChange = (text: string) => {
     setMessage(text);
 
-    if (!socket || !isConnected) return;
+    if (!socket || !socket.connected) return;
 
     if (!selfTyping) {
       setSelfTyping(true);
-      socket.emit(TYPING_EVENT, currentChat.current?._id);
+      socket.emit('typing', currentChat?._id);
     }
 
     if (typingTimeoutRef.current) {
@@ -162,7 +89,7 @@ const ChatPage = () => {
     const timerLength = 3000;
 
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit(STOP_TYPING_EVENT, currentChat.current?._id);
+      socket.emit('stopTyping', currentChat?._id);
       setSelfTyping(false);
     }, timerLength);
   };
@@ -180,214 +107,153 @@ const ChatPage = () => {
     }
   };
 
-  const onConnect = () => {
-    setIsConnected(true);
-  };
-
-  const onDisconnect = () => {
-    setIsConnected(false);
-  };
-
-  const handleOnSocketTyping = (chatId: string) => {
-    if (chatId !== currentChat.current?._id) return;
-    setIsTyping(true);
-  };
-
-  const handleOnSocketStopTyping = (chatId: string) => {
-    if (chatId !== currentChat.current?._id) return;
-    setIsTyping(false);
-  };
-
-  const onMessageDelete = (message: ChatMessageInterface) => {
-    if (message?.chat !== currentChat.current?._id) {
-      setUnreadMessages((prev) => prev.filter((msg) => msg._id !== message._id));
-    } else {
-      setMessages((prev) => prev.filter((msg) => msg._id !== message._id));
-    }
-
-    updateChatLastMessageOnDeletion(message.chat, message);
-  };
-
-  const onMessageReceived = (message: ChatMessageInterface) => {
-    if (message?.chat !== currentChat.current?._id) {
-      setUnreadMessages((prev) => [message, ...prev]);
-    } else {
-      setMessages((prev) => [message, ...prev]);
-    }
-
-    updateChatLastMessage(message.chat || '', message);
-  };
-
-  const onNewChat = (chat: ChatListItemInterface) => {
-    setChats((prev) => [chat, ...prev]);
-  };
-
-  const onChatLeave = (chat: ChatListItemInterface) => {
-    if (chat._id === currentChat.current?._id) {
-      currentChat.current = null;
-      ExpoSecureStoreAdapter.removeItem('currentChat');
-    }
-    setChats((prev) => prev.filter((c) => c._id !== chat._id));
-  };
-
-  const onGroupNameChange = (chat: ChatListItemInterface) => {
-    if (chat._id === currentChat.current?._id) {
-      currentChat.current = chat;
-      ExpoSecureStoreAdapter.setItem('currentChat', JSON.stringify(chat));
-    }
-
-    setChats((prev) => [
-      ...prev.map((c) => {
-        if (c._id === chat._id) {
-          return chat;
-        }
-        return c;
-      }),
-    ]);
-  };
-
   useEffect(() => {
-    getChats();
     ExpoSecureStoreAdapter.getItem('currentChat').then((value: any) => {
       if (value) {
         const _currentChat = JSON.parse(value);
-        currentChat.current = _currentChat;
-        socket?.emit(JOIN_CHAT_EVENT, _currentChat._id);
-        getMessages();
+        setCurrentChat(_currentChat);
       }
     });
   }, []);
 
   useEffect(() => {
+    if (currentChat) {
+      getMessages();
+    }
+  }, [currentChat]);
+
+  useEffect(() => {
     if (!socket) return;
 
-    socket.on(CONNECTED_EVENT, onConnect);
-    socket.on(DISCONNECT_EVENT, onDisconnect);
-    socket.on(TYPING_EVENT, handleOnSocketTyping);
-    socket.on(STOP_TYPING_EVENT, handleOnSocketStopTyping);
-    socket.on(MESSAGE_RECEIVED_EVENT, onMessageReceived);
-    socket.on(NEW_CHAT_EVENT, onNewChat);
-    socket.on(LEAVE_CHAT_EVENT, onChatLeave);
-    socket.on(UPDATE_GROUP_NAME_EVENT, onGroupNameChange);
-    socket.on(MESSAGE_DELETE_EVENT, onMessageDelete);
+    const onTyping = (chatId: string) => {
+      if (chatId !== currentChat?._id) return;
+      setIsTyping(true);
+    };
+
+    const onStopTyping = (chatId: string) => {
+      if (chatId !== currentChat?._id) return;
+      setIsTyping(false);
+    };
+
+    const onMessageReceived = (message: ChatMessageInterface) => {
+      if (message?.chat !== currentChat?._id) return;
+      setMessages((prev) => [message, ...prev]);
+    };
+
+    const onMessageDelete = (message: ChatMessageInterface) => {
+      if (message?.chat !== currentChat?._id) return;
+      setMessages((prev) => prev.filter((msg) => msg._id !== message._id));
+    };
+
+    socket.on('typing', onTyping);
+    socket.on('stopTyping', onStopTyping);
+    socket.on('messageReceived', onMessageReceived);
+    socket.on('messageDeleted', onMessageDelete);
 
     return () => {
-      socket.off(CONNECTED_EVENT, onConnect);
-      socket.off(DISCONNECT_EVENT, onDisconnect);
-      socket.off(TYPING_EVENT, handleOnSocketTyping);
-      socket.off(STOP_TYPING_EVENT, handleOnSocketStopTyping);
-      socket.off(MESSAGE_RECEIVED_EVENT, onMessageReceived);
-      socket.off(NEW_CHAT_EVENT, onNewChat);
-      socket.off(LEAVE_CHAT_EVENT, onChatLeave);
-      socket.off(UPDATE_GROUP_NAME_EVENT, onGroupNameChange);
-      socket.off(MESSAGE_DELETE_EVENT, onMessageDelete);
+      socket.off('typing', onTyping);
+      socket.off('stopTyping', onStopTyping);
+      socket.off('messageReceived', onMessageReceived);
+      socket.off('messageDeleted', onMessageDelete);
     };
-  }, [socket, chats]);
+  }, [socket, currentChat]);
 
-  // return <View></View>;
-  const { id, currentChat: currentChatString } = useLocalSearchParams();
-  if (!currentChatString) {
-    return <View></View>;
+  if (!currentChat) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <Text className="text-taza-dark">Loading chat...</Text>
+      </View>
+    );
   }
-  const currentChat: React.MutableRefObject<ChatListItemInterface | null> = JSON.parse(
-    currentChatString as string
-  );
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1">
-      <View className="flex-1 border-l border-taza-orange bg-white">
-        {currentChat.current && currentChat.current?._id ? (
-          <>
-            <View className="sticky top-0 z-20 w-full flex-row items-center justify-between border-b border-taza-orange bg-taza-red p-4">
-              <View className="flex-row items-center">
-                {currentChat.current.isGroupChat ? (
-                  <View className="relative h-12 w-12 flex-shrink-0 flex-row items-center justify-start">
-                    {currentChat.current.participants.slice(0, 3).map((participant, i) => (
-                      <Image
-                        key={participant._id}
-                        source={{ uri: participant.avatar.url }}
-                        className="absolute h-9 w-9 rounded-full border border-white"
-                        style={{ left: i * 8, zIndex: 3 - i }}
-                      />
-                    ))}
-                  </View>
-                ) : (
+      <View className="flex-1 bg-white">
+        <View className="sticky top-0 z-20 w-full flex-row items-center justify-between border-b border-taza-orange bg-taza-red p-4">
+          <View className="flex-row items-center">
+            {currentChat.isGroupChat ? (
+              <View className="relative h-12 w-12 flex-shrink-0 flex-row items-center justify-start">
+                {currentChat.participants.slice(0, 3).map((participant, i) => (
                   <Image
-                    className="h-14 w-14 flex-shrink-0 rounded-full"
-                    source={{ uri: getChatObjectMetadata(currentChat.current, user!).avatar }}
+                    key={participant._id}
+                    source={{ uri: participant.avatar.url }}
+                    className="absolute h-9 w-9 rounded-full border border-white"
+                    style={{ left: i * 8, zIndex: 3 - i }}
                   />
-                )}
-                <View className="ml-3">
-                  <Text className="font-bold text-white">
-                    {getChatObjectMetadata(currentChat.current, user!).title}
-                  </Text>
-                  <Text className="text-sm text-taza-light">
-                    {getChatObjectMetadata(currentChat.current, user!).description}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            <FlatList
-              inverted
-              className="p-4"
-              data={messages}
-              renderItem={({ item: msg }) => (
-                <MessageItem
-                  isOwnMessage={msg.sender?._id === user?._id}
-                  isGroupChatMessage={currentChat.current?.isGroupChat}
-                  message={msg}
-                  deleteChatMessage={deleteChatMessage}
-                />
-              )}
-              keyExtractor={(item) => item._id}
-              ListHeaderComponent={isTyping ? <Typing /> : null}
-            />
-
-            {attachedFiles.length > 0 && (
-              <ScrollView horizontal className="p-4">
-                {attachedFiles.map((file, i) => (
-                  <View key={i} className="relative mr-2 h-32 w-32 rounded-xl">
-                    <TouchableOpacity
-                      className="absolute -right-2 -top-2 z-10"
-                      onPress={() => {
-                        setAttachedFiles(attachedFiles.filter((_, ind) => ind !== i));
-                      }}>
-                      <XCircleIcon color="white" size={24} />
-                    </TouchableOpacity>
-                    <Image className="h-full w-full rounded-xl" source={{ uri: file.uri }} />
-                  </View>
                 ))}
-              </ScrollView>
-            )}
-
-            <View className="w-full flex-row items-center justify-between border-t border-taza-orange bg-taza-light p-4">
-              <TouchableOpacity onPress={pickImage} className="rounded-full bg-taza-orange p-4">
-                <PaperClipIcon color="white" size={24} />
-              </TouchableOpacity>
-              <TextInput
-                placeholder="Message"
-                value={message}
-                onChangeText={handleOnMessageChange}
-                className="mx-2 flex-1 rounded-full bg-white px-4 py-2 text-taza-dark"
+              </View>
+            ) : (
+              <Image
+                className="h-14 w-14 flex-shrink-0 rounded-full"
+                source={{ uri: getChatObjectMetadata(currentChat, user!).avatar }}
               />
-              <TouchableOpacity
-                onPress={sendChatMessage}
-                disabled={!message && attachedFiles.length <= 0}
-                className="rounded-full bg-taza-red p-4">
-                <PaperAirplaneIcon color="white" size={24} />
-              </TouchableOpacity>
+            )}
+            <View className="ml-3">
+              <Text className="font-bold text-white">
+                {getChatObjectMetadata(currentChat, user!).title}
+              </Text>
+              <Text className="text-sm text-taza-light">
+                {getChatObjectMetadata(currentChat, user!).description}
+              </Text>
             </View>
-          </>
-        ) : (
-          <View className="flex-1 items-center justify-center">
-            <Text className="text-taza-dark">No chat selected</Text>
           </View>
+        </View>
+
+        <FlatList
+          inverted
+          className="p-4"
+          data={messages}
+          renderItem={({ item: msg }) => (
+            <MessageItem
+              isOwnMessage={msg.sender?._id === user?._id}
+              isGroupChatMessage={currentChat?.isGroupChat}
+              message={msg}
+              deleteChatMessage={deleteChatMessage}
+            />
+          )}
+          keyExtractor={(item) => item._id}
+          ListHeaderComponent={isTyping ? <Typing /> : null}
+        />
+
+        {attachedFiles.length > 0 && (
+          <ScrollView horizontal className="p-4">
+            {attachedFiles.map((file, i) => (
+              <View key={i} className="relative mr-2 h-32 w-32 rounded-xl">
+                <TouchableOpacity
+                  className="absolute -right-2 -top-2 z-10"
+                  onPress={() => {
+                    setAttachedFiles(attachedFiles.filter((_, ind) => ind !== i));
+                  }}>
+                  <XCircleIcon color="white" size={24} />
+                </TouchableOpacity>
+                <Image className="h-full w-full rounded-xl" source={{ uri: file.uri }} />
+              </View>
+            ))}
+          </ScrollView>
         )}
+
+        <View className="w-full flex-row items-center justify-between border-t border-taza-orange bg-taza-light p-4">
+          <TouchableOpacity onPress={pickImage} className="rounded-full bg-taza-orange p-4">
+            <PaperClipIcon color="white" size={24} />
+          </TouchableOpacity>
+          <TextInput
+            placeholder="Message"
+            value={message}
+            onChangeText={handleOnMessageChange}
+            className="mx-2 flex-1 rounded-full bg-white px-4 py-2 text-taza-dark"
+          />
+          <TouchableOpacity
+            onPress={sendChatMessage}
+            disabled={!message && attachedFiles.length <= 0}
+            className="rounded-full bg-taza-red p-4">
+            <PaperAirplaneIcon color="white" size={24} />
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
 };
 
-export default ChatPage;
+export default ChatDetailsScreen;
