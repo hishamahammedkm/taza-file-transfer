@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '~/providers/AuthProvider';
-import { ChatListItemInterface } from 'interfaces/chat';
+import { ChatListItemInterface, ChatMessageInterface } from 'interfaces/chat';
 import { getChatObjectMetadata, requestHandler } from './lib/index';
 import { getUserChats } from './api';
 import AddChatModal from './components/chat/AddChatModal';
@@ -20,6 +20,7 @@ const ChatListScreen = () => {
   const [loadingChats, setLoadingChats] = useState(false);
   const [chats, setChats] = useState<ChatListItemInterface[]>([]);
   const [localSearchQuery, setLocalSearchQuery] = useState('');
+  const [unreadMessages, setUnreadMessages] = useState<ChatMessageInterface[]>([]);
 
   const getChats = async () => {
     requestHandler(
@@ -59,16 +60,26 @@ const ChatListScreen = () => {
       ]);
     };
 
+    const onMessageReceived = (message: ChatMessageInterface) => {
+      setUnreadMessages((prev) => [...prev, message]);
+    };
+
     socket.on('newChat', onNewChat);
     socket.on('leaveChat', onChatLeave);
     socket.on('updateGroupName', onGroupNameChange);
+    socket.on('messageReceived', onMessageReceived);
 
     return () => {
       socket.off('newChat', onNewChat);
       socket.off('leaveChat', onChatLeave);
       socket.off('updateGroupName', onGroupNameChange);
+      socket.off('messageReceived', onMessageReceived);
     };
   }, [socket, chats]);
+
+  const getUnreadCount = (chatId: string) => {
+    return unreadMessages.filter((msg) => msg.chat === chatId).length;
+  };
 
   return (
     <View className="flex-1 bg-white">
@@ -112,13 +123,15 @@ const ChatListScreen = () => {
             <ChatItem
               chat={chat}
               isActive={false}
-              unreadCount={0}
+              unreadCount={getUnreadCount(chat._id)}
               onClick={(chat) => {
                 ExpoSecureStoreAdapter.setItem('currentChat', JSON.stringify(chat));
+                setUnreadMessages((prev) => prev.filter((msg) => msg.chat !== chat._id));
                 router.push(`/(chat)/${chat._id}`);
               }}
               onChatDelete={(chatId) => {
                 setChats((prev) => prev.filter((chat) => chat._id !== chatId));
+                setUnreadMessages((prev) => prev.filter((msg) => msg.chat !== chatId));
               }}
             />
           )}
