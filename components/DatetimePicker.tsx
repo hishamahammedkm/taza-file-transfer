@@ -1,53 +1,50 @@
 import React, { useState } from 'react';
-import { View, Button, Platform, StyleSheet, Pressable } from 'react-native';
+import { View, Pressable, Platform } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+
 type Props = {
   value?: Invoice;
   setValue: (value: Invoice) => void;
 };
 
 export default function DTPicker({ value, setValue }: Props) {
-  // const [date, setDate] = useState(new Date());
-  const [mode, setMode] = useState('date');
+  const [mode, setMode] = useState<'date' | 'time'>('date');
   const [show, setShow] = useState(false);
 
   const onChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    const currentDate = selectedDate || new Date();
+    const currentDate = selectedDate || value?.date_time || new Date();
     setShow(Platform.OS === 'ios');
 
     if (mode === 'date') {
       setValue({ ...value, date_time: currentDate });
-      setMode('time'); // Change to time picker after selecting date
-      setShow(true); // Show the time picker
+      setMode('time');
+      setShow(true);
     } else {
-      // setDate(currentDate);
       setValue({ ...value, date_time: currentDate });
-      // Update the date with the selected time
-      setShow(false); // Close the picker
+      setShow(false);
     }
   };
 
-  const showMode = (currentMode: any) => {
-    setShow(true);
-    setMode(currentMode);
-  };
-
   const showDatepicker = () => {
-    showMode('date');
+    setMode('date');
     setShow(true);
-  };
-
-  const showTimepicker = () => {
-    showMode('time');
   };
 
   return (
-    <View style={styles.container}>
-      <Pressable onPress={showDatepicker} className="rounded-full bg-white p-2">
-        <Text className=" mt-2 self-center text-lg  font-extrabold text-red-600">
-          Date and Time: {value?.date_time.toLocaleDateString()} {value?.date_time.toLocaleTimeString()}
+    <View className="mb-4">
+      <Pressable 
+        onPress={showDatepicker}
+        className="flex-row items-center border rounded-lg px-3 py-2 border-gray-300 bg-white"
+      >
+        <Ionicons name="calendar-outline" size={24} color="#666" className="mr-2" />
+        <Text className="flex-1 text-base text-gray-700">
+          {value?.date_time
+            ? `${value.date_time.toLocaleDateString()} ${value.date_time.toLocaleTimeString()}`
+            : 'Select Date and Time'}
         </Text>
+        <Ionicons name="chevron-down-outline" size={24} color="#666" />
       </Pressable>
 
       {show && (
@@ -63,22 +60,3 @@ export default function DTPicker({ value, setValue }: Props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    // padding: 16,
-    // backgroundColor: '#FFF1D7', // Light background color inspired by the logo's border
-    // borderRadius: 10,
-  },
-  buttonContainer: {
-    marginBottom: 5,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  selectedDateText: {
-    color: '#D32F2F', // Red color similar to the logo's text
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-});

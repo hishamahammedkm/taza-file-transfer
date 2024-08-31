@@ -36,12 +36,18 @@ const Header = ({ title }: Props) => {
         anchor={<Appbar.Action icon={MORE_ICON} onPress={openMenu} />}>
         <Menu.Item disabled onPress={() => {}} title={session?.user.email} />
         <Divider />
+        <Menu.Item
+          onPress={async () => {
+            supabase.auth.signOut();
+            router.push('/postInvoice');
+          }}
+          title="Bill"
+        />
 
         <Menu.Item
           onPress={async () => {
             supabase.auth.signOut();
             router.replace('/sign-in');
-            
           }}
           title="Log out"
         />

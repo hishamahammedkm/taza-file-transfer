@@ -1,35 +1,58 @@
-import {  useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Image, Text, TextInput, View, ScrollView, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DropdownComponent from '~/components/BrachSelector';
 import DTPicker from '~/components/DatetimePicker';
-
-
 import * as FileSystem from 'expo-file-system';
 import { randomUUID } from 'expo-crypto';
 import { supabase } from '~/utils/supabase';
 import { decode } from 'base64-arraybuffer';
 import { useBranches, useInsertInvoice } from '~/api/invoice';
-import { TouchableOpacity } from 'react-native';
-import Header from '~/components/Header';
+import { useForm, Controller } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useWindowDimensions } from 'react-native';
+
+interface FormData {
+  invoice_number: string;
+  branch_id: string;
+  remarks: string;
+  date_time: Date;
+}
+
+const schema = yup.object().shape({
+  invoice_number: yup.string().required('Invoice number is required'),
+  branch_id: yup.string().required('Branch is required'),
+  remarks: yup.string().required('Remarks are required'),
+  date_time: yup.date().required('Date and time are required'),
+});
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
-  const { data: branchesData, error: branchesError } = useBranches();
-
-  const [invoice, setInvoice] = useState<Invoice>({
-    invoice_number: '',
-    branch_id: '',
-    remarks: '',
-    file_path: '',
-    date_time: new Date(),
-  });
-
   const [image, setImage] = useState<string | null>(null);
-
-  const { mutate: insertInvoice, isSuccess, error, isPending, status } = useInsertInvoice();
+  const { data: branchesData, error: branchesError } = useBranches();
+  const { mutate: insertInvoice } = useInsertInvoice();
+  const { width } = useWindowDimensions();
+  const isTablet = width > 768;
 
   const branches = branchesData?.map((branch) => ({ value: branch.id, label: branch.name })) || [];
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+  } = useForm<FormData>({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      invoice_number: '',
+      branch_id: '',
+      remarks: '',
+      date_time: new Date(),
+    },
+  });
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -59,30 +82,25 @@ export default function Home() {
       .from('assets')
       .upload(filePath, decode(base64), { contentType });
 
-    console.log(error);
-
     if (data) {
       return data.path;
     }
   };
 
-  const handleSubmit = async () => {
+  const onSubmit = async (data: FormData) => {
     if (loading) return;
     setLoading(true);
     const file_path = await uploadImage();
     insertInvoice(
-      { ...invoice, file_path },
+      { ...data, file_path },
       {
         onSuccess: () => {
           setImage(null);
-          setInvoice({
-            invoice_number: '',
-            branch_id: '',
-            remarks: '',
-            file_path: '',
-            date_time: new Date(),
-          });
-          Alert.alert('Success');
+          setValue('invoice_number', '');
+          setValue('branch_id', '');
+          setValue('remarks', '');
+          setValue('date_time', new Date());
+          Alert.alert('Success', 'Invoice added successfully!');
         },
       }
     );
@@ -90,103 +108,126 @@ export default function Home() {
   };
 
   return (
-    <>
-      <Header title="Add Invoice" />
-      <View className="flex h-screen gap-5 bg-red-500 p-5">
-        <TextInput
-          className="text-red-500"
-          style={styles.input}
-          placeholder="Enter invoice number..."
-          placeholderTextColor="#FFB03B"
-          value={invoice.invoice_number}
-          onChangeText={(text) => setInvoice({ ...invoice, invoice_number: text })}
-        />
+    <LinearGradient colors={['#4c669f', '#3b5998', '#192f6a']} className="flex-1">
+      <ScrollView contentContainerClassName="flex-grow">
+        <View className={`flex-1 justify-center p-8 ${isTablet ? 'px-16' : ''}`}>
+          <View className="rounded-3xl bg-white bg-opacity-90 p-8 shadow-lg">
+            <Text className="mb-6 text-center text-3xl font-bold text-gray-800">Add Invoice</Text>
 
-        <DropdownComponent data={branches} value={invoice} setValue={setInvoice} />
-        <DTPicker value={invoice} setValue={setInvoice} />
-        {!image && (
-          <Pressable
-            className="flex h-60 items-center justify-center rounded-lg bg-white"
-            onPress={pickImage}>
-            <Text className="font-bold text-yellow-500">Pick an image</Text>
-          </Pressable>
-        )}
-        {image && <Image source={{ uri: image }} style={styles.image} />}
+            <Controller
+              control={control}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View className="mb-4">
+                  <View
+                    className={`flex-row items-center rounded-lg border px-3 py-2 ${errors.invoice_number ? 'border-red-500' : 'border-gray-300'}`}>
+                    <Ionicons
+                      name="document-text-outline"
+                      size={24}
+                      color="#666"
+                      className="mr-2"
+                    />
+                    <TextInput
+                      className="flex-1 text-base"
+                      placeholder="Invoice Number"
+                      placeholderTextColor="#999"
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      value={value}
+                    />
+                  </View>
+                  {errors.invoice_number && (
+                    <Text className="mt-1 text-xs text-red-500">
+                      {errors.invoice_number.message}
+                    </Text>
+                  )}
+                </View>
+              )}
+              name="invoice_number"
+            />
 
-        <TextInput
-          className="rounded-lg bg-white p-3 font-bold text-red-500 placeholder:text-yellow-500 "
-          placeholder="Remarks"
-          placeholderTextColor="yellow"
-          multiline={true}
-          numberOfLines={4}
-          onChangeText={(text) => setInvoice({ ...invoice, remarks: text })}
-          value={invoice.remarks}
-          textAlignVertical="top"
-        />
+            <Controller
+              control={control}
+              render={({ field: { onChange, value } }) => (
+                <View className="mb-4">
+                  <DropdownComponent
+                    data={branches}
+                    value={{ branch_id: value }}
+                    setValue={(newValue) => onChange(newValue.branch_id)}
+                  />
+                  {errors.branch_id && (
+                    <Text className="mt-1 text-xs text-red-500">{errors.branch_id.message}</Text>
+                  )}
+                </View>
+              )}
+              name="branch_id"
+            />
 
-        <TouchableOpacity
-          className="mt-5 items-center rounded-full bg-yellow-400 px-8 py-3"
-          onPress={handleSubmit}>
-          <Text className="text-red-500" style={styles.submitButtonText}>
-            {loading ? 'Submitting...' : 'Submit'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </>
+            <Controller
+              control={control}
+              render={({ field: { onChange, value } }) => (
+                <View className="mb-4">
+                  <DTPicker
+                    value={{ date_time: value }}
+                    setValue={(newValue) => onChange(newValue.date_time)}
+                  />
+                  {errors.date_time && (
+                    <Text className="mt-1 text-xs text-red-500">{errors.date_time.message}</Text>
+                  )}
+                </View>
+              )}
+              name="date_time"
+            />
+
+            <TouchableOpacity
+              className="mb-4 flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-4"
+              onPress={pickImage}>
+              {image ? (
+                <Image source={{ uri: image }} className="h-48 w-full rounded-lg" />
+              ) : (
+                <View className="items-center">
+                  <Ionicons name="cloud-upload-outline" size={48} color="#666" />
+                  <Text className="mt-2 text-gray-500">Upload Invoice Image</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <Controller
+              control={control}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View className="mb-6">
+                  <View
+                    className={`rounded-lg border px-3 py-2 ${errors.remarks ? 'border-red-500' : 'border-gray-300'}`}>
+                    <TextInput
+                      className="h-24 text-base" // Set a fixed height
+                      placeholder="Remarks"
+                      placeholderTextColor="#999"
+                      multiline={true}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      value={value}
+                      textAlignVertical="top"
+                      scrollEnabled={true} // Enable scrolling within the TextInput
+                    />
+                  </View>
+                  {errors.remarks && (
+                    <Text className="mt-1 text-xs text-red-500">{errors.remarks.message}</Text>
+                  )}
+                </View>
+              )}
+              name="remarks"
+            />
+
+            <TouchableOpacity
+              className={`items-center rounded-lg bg-indigo-600 py-3 shadow-md ${loading ? 'opacity-70' : ''}`}
+              onPress={handleSubmit(onSubmit)}
+              disabled={loading}>
+              <Text className="text-lg font-bold text-white">
+                {loading ? 'Submitting...' : 'Add Invoice'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </LinearGradient>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    gap: 10,
-    padding: 16,
-    backgroundColor: '#FFF1D7',
-    // gap:10 // Light background color inspired by the logo's border
-  },
-  image: {
-    width: '100%',
-    aspectRatio: 1,
-
-    alignSelf: 'center',
-    // width: "auto",
-    // // height: "auto",
-    height: 240,
-    // objectFit:"contain",
-    borderRadius: 15,
-    marginBottom: 10,
-    // backgroundColor: '#FFD7B5', // Placeholder background when no image is selected
-    borderColor: '#D32F2F', // Red border color to match the logo
-    borderWidth: 2,
-  },
-  textButton: {
-    textAlign: 'center',
-    color: '#D32F2F', // Red color similar to the logo's text
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 5,
-  },
-  input: {
-    width: '100%',
-    height: 50,
-    borderColor: '#D32F2F', // Red color similar to the background of the logo
-    borderWidth: 1,
-    borderRadius: 25, // Rounded corners like the circular design in the logo
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-    fontSize: 16,
-  },
-  submitButton: {
-    marginTop: 20,
-    backgroundColor: '#D32F2F', // Red color inspired by the logo
-    borderRadius: 25, // Rounded corners to match the logo's style
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    alignItems: 'center',
-  },
-  submitButtonText: {
-    color: '#FFFFFF', // White text for contrast
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-});
