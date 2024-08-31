@@ -58,7 +58,7 @@ const SignUpScreen: React.FC = () => {
       if (authError) throw authError;
 
       if (authData && authData.user) {
-        console.log('authData---', authData);
+
 
         const { error: updateError } = await supabase
           .from('user_profile')
