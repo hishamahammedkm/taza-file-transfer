@@ -1,115 +1,160 @@
-import { View, Text, TextInput, StyleSheet, Alert, Image } from 'react-native';
 import React, { useState } from 'react';
-
+import {
+  View,
+  Text,
+  TextInput,
+  Alert,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  useWindowDimensions,
+} from 'react-native';
 import { Link, Stack } from 'expo-router';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 import { supabase } from '~/utils/supabase';
-import { Button } from 'react-native';
-import { TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const SignInScreen = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+// Define the shape of our form data
+interface FormData {
+  email: string;
+  password: string;
+}
 
-  async function signInWithEmail() {
+// Define our validation schema
+const schema = yup.object().shape({
+  email: yup.string().email('Invalid email').required('Email is required'),
+  password: yup.string().required('Password is required'),
+});
+
+const SignInScreen: React.FC = () => {
+  const [loading, setLoading] = useState<boolean>(false);
+  const { width } = useWindowDimensions();
+  const isTablet = width > 768;
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: yupResolver(schema),
+  });
+
+  const onSubmit = async (data: FormData) => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
 
-    if (error) Alert.alert(error.message);
-    setLoading(false);
-  }
+      if (error) throw error;
+
+      Alert.alert('Success', 'Signed in successfully!');
+      // Navigate to the main app screen or perform any other action after successful sign-in
+    } catch (error) {
+      Alert.alert('Error', (error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <View className="flex h-screen gap-3 bg-white p-5">
-      <Stack.Screen options={{ title: 'Sign in' }} />
-      <View className="flex-1 items-center justify-center">
-        <Image source={require('~/assets/splash.jpeg')} style={styles.image} />
-      </View>
-      <View className="flex-1 gap-3">
-        <TextInput
-          placeholderTextColor="#FFB03B" // Light yellow color similar to the border in the logo
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Email"
-          style={styles.input}
-        />
+    <LinearGradient colors={['#4c669f', '#3b5998', '#192f6a']} className="flex-1">
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScrollView contentContainerClassName="flex-grow">
+        <View className={`flex-1 justify-center p-8 ${isTablet ? 'px-16' : ''}`}>
+          <View className="rounded-3xl bg-white bg-opacity-90 p-8 shadow-lg">
+            <View className="mb-8 items-center">
+              <Image source={require('~/assets/splash.jpeg')} className="h-32 w-32 rounded-full" />
+              <Text className="mt-4 text-3xl font-bold text-gray-800">Sign In</Text>
+            </View>
 
-        <TextInput
-          placeholderTextColor="#FFB03B" // Light yellow color similar to the border in the logo
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Password"
-          style={styles.input}
-          secureTextEntry
-        />
+            <Controller
+              control={control}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View className="mb-4">
+                  <View
+                    className={`flex-row items-center rounded-lg border px-3 py-2 ${errors.email ? 'border-red-500' : 'border-gray-300'}`}>
+                    <Ionicons
+                      name="mail-outline"
+                      size={24}
+                      color="#666"
+                      style={{ marginRight: 8 }}
+                    />
+                    <TextInput
+                      className="flex-1 text-base"
+                      placeholder="Email"
+                      placeholderTextColor="#999"
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      value={value}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                  </View>
+                  {errors.email && (
+                    <Text className="mt-1 text-xs text-red-500">{errors.email.message}</Text>
+                  )}
+                </View>
+              )}
+              name="email"
+              defaultValue=""
+            />
 
-        <TouchableOpacity
-          className="mt-3 items-center rounded-full bg-yellow-400 px-8 py-3"
-          onPress={() => {
-            signInWithEmail();
-          }}>
-          <Text className="text-red-500" style={styles.submitButtonText}>
-            {loading ? 'Signing in...' : 'Sign in'}
-          </Text>
-        </TouchableOpacity>
-        <View>
-          <Link className="" href="/sign-up" asChild>
-            <Text className=" text-xs text-yellow-500">Create an account ?</Text>
-          </Link>
+            <Controller
+              control={control}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View className="mb-6">
+                  <View
+                    className={`flex-row items-center rounded-lg border px-3 py-2 ${errors.password ? 'border-red-500' : 'border-gray-300'}`}>
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={24}
+                      color="#666"
+                      style={{ marginRight: 8 }}
+                    />
+                    <TextInput
+                      className="flex-1 text-base"
+                      placeholder="Password"
+                      placeholderTextColor="#999"
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      value={value}
+                      secureTextEntry
+                    />
+                  </View>
+                  {errors.password && (
+                    <Text className="mt-1 text-xs text-red-500">{errors.password.message}</Text>
+                  )}
+                </View>
+              )}
+              name="password"
+              defaultValue=""
+            />
+
+            <TouchableOpacity
+              className={`items-center rounded-lg bg-indigo-600 py-3 shadow-md ${loading ? 'opacity-70' : ''}`}
+              onPress={handleSubmit(onSubmit)}
+              disabled={loading}>
+              <Text className="text-lg font-bold text-white">
+                {loading ? 'Signing In...' : 'Sign In'}
+              </Text>
+            </TouchableOpacity>
+
+            <View className="mt-6 flex-row justify-center">
+              <Text className="text-gray-600">Don't have an account? </Text>
+              <Link href="/sign-up" asChild>
+                <Text className="font-bold text-indigo-600">Sign Up</Text>
+              </Link>
+            </View>
+          </View>
         </View>
-      </View>
-    </View>
+      </ScrollView>
+    </LinearGradient>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    justifyContent: 'center',
-    flex: 1,
-  },
-  label: {
-    color: 'gray',
-  },
-  input: {
-    width: '100%',
-    height: 50,
-    borderColor: '#D32F2F', // Red color similar to the background of the logo
-    borderWidth: 1,
-    borderRadius: 25, // Rounded corners like the circular design in the logo
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-    fontSize: 16,
-  },
-  image: {
-    width: 350,
-    height: 350,
-    // width: 'auto',
-    // objectFit: 'contain',
-    // // height: '50%',
-  },
-  submitButton: {
-    marginTop: 20,
-    backgroundColor: '#D32F2F', // Red color inspired by the logo
-    borderRadius: 25, // Rounded corners to match the logo's style
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    alignItems: 'center',
-  },
-  submitButtonText: {
-    color: '#FFFFFF', // White text for contrast
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  textButton: {
-    alignSelf: 'center',
-    fontWeight: 'bold',
-    color: 'red',
-    marginVertical: 10,
-  },
-});
 
 export default SignInScreen;
