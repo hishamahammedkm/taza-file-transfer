@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '~/providers/AuthProvider';
 import { ChatListItemInterface, ChatMessageInterface } from 'interfaces/chat';
@@ -10,6 +10,8 @@ import ChatItem from './components/chat/ChatItem';
 import Typing from './components/chat/Typing';
 import { useSocket } from '~/providers/SocketContext';
 import { ExpoSecureStoreAdapter } from '~/utils/supabase';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
 const ChatListScreen = () => {
   const router = useRouter();
@@ -82,63 +84,74 @@ const ChatListScreen = () => {
   };
 
   return (
-    <View className="flex-1 bg-white">
-      <AddChatModal
-        visible={openAddChat}
-        onClose={() => {
-          setOpenAddChat(false);
-        }}
-        onSuccess={() => {
-          getChats();
-        }}
-      />
 
-      <View className="sticky top-0 z-10 flex-row items-center justify-between bg-white px-4 py-4">
-        <TextInput
-          placeholder="Search user or group..."
-          value={localSearchQuery}
-          onChangeText={(text) => setLocalSearchQuery(text.toLowerCase())}
-          className="mr-2 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-taza-dark"
-        />
-        <TouchableOpacity
-          onPress={() => setOpenAddChat(true)}
-          className="rounded-xl bg-taza-orange px-3 py-2">
-          <Text className="font-bold text-white">+ Add chat</Text>
-        </TouchableOpacity>
-      </View>
-      {loadingChats ? (
-        <View className="flex-1 items-center justify-center">
-          <Typing />
-        </View>
-      ) : (
-        <FlatList
-          data={chats.filter((chat) =>
-            localSearchQuery
-              ? getChatObjectMetadata(chat, user!)
-                  .title?.toLocaleLowerCase()
-                  ?.includes(localSearchQuery)
-              : true
-          )}
-          renderItem={({ item: chat }) => (
-            <ChatItem
-              chat={chat}
-              isActive={false}
-              unreadCount={getUnreadCount(chat._id)}
-              onClick={(chat) => {
-                ExpoSecureStoreAdapter.setItem('currentChat', JSON.stringify(chat));
-                setUnreadMessages((prev) => prev.filter((msg) => msg.chat !== chat._id));
-                router.push(`/(chat)/${chat._id}`);
+      <SafeAreaView className="flex-1">
+        <View className=" flex-1">
+          <View className="flex-1  bg-white bg-opacity-90 p-4 ">
+            <AddChatModal
+              visible={openAddChat}
+              onClose={() => {
+                setOpenAddChat(false);
               }}
-              onChatDelete={(chatId) => {
-                setChats((prev) => prev.filter((chat) => chat._id !== chatId));
-                setUnreadMessages((prev) => prev.filter((msg) => msg.chat !== chatId));
+              onSuccess={() => {
+                getChats();
               }}
             />
-          )}
-          keyExtractor={(item) => item._id}
-        />
-      )}
-    </View>
+
+            <View className="mb-4 flex-row items-center justify-between">
+              <View className="mr-2 flex-1 flex-row items-center rounded-lg border border-gray-300 bg-white">
+                <Ionicons name="search" size={20} color="#666" style={{ marginLeft: 8 }} />
+                <TextInput
+                  placeholder="Search user or group..."
+                  value={localSearchQuery}
+                  onChangeText={(text) => setLocalSearchQuery(text.toLowerCase())}
+                  className="flex-1 px-2 py-2 text-gray-700"
+                />
+              </View>
+              <TouchableOpacity
+                onPress={() => setOpenAddChat(true)}
+                className="rounded-lg bg-indigo-600 px-3 py-2">
+                <Text className="font-bold text-white">+ Add chat</Text>
+              </TouchableOpacity>
+            </View>
+
+            {loadingChats ? (
+              <View className="flex-1 items-center justify-center">
+                <Typing />
+              </View>
+            ) : (
+              <FlatList
+                data={chats.filter((chat) =>
+                  localSearchQuery
+                    ? getChatObjectMetadata(chat, user!)
+                        .title?.toLocaleLowerCase()
+                        ?.includes(localSearchQuery)
+                    : true
+                )}
+                renderItem={({ item: chat }) => (
+                  <ChatItem
+                    chat={chat}
+                    isActive={false}
+                    unreadCount={getUnreadCount(chat._id)}
+                    onClick={(chat) => {
+                      ExpoSecureStoreAdapter.setItem('currentChat', JSON.stringify(chat));
+                      setUnreadMessages((prev) => prev.filter((msg) => msg.chat !== chat._id));
+                      router.push(`/(chat)/${chat._id}`);
+                    }}
+                    onChatDelete={(chatId) => {
+                      setChats((prev) => prev.filter((chat) => chat._id !== chatId));
+                      setUnreadMessages((prev) => prev.filter((msg) => msg.chat !== chatId));
+                    }}
+                  />
+                )}
+                keyExtractor={(item) => item._id}
+                className="flex-1"
+              />
+            )}
+          </View>
+        </View>
+      </SafeAreaView>
+
   );
 };
 

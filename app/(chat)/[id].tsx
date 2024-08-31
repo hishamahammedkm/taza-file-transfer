@@ -9,6 +9,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { PaperAirplaneIcon, PaperClipIcon, XCircleIcon } from 'react-native-heroicons/solid';
@@ -21,6 +22,7 @@ import MessageItem from './components/chat/MessageItem';
 import Typing from './components/chat/Typing';
 import { useSocket } from '~/providers/SocketContext';
 import { useAuth } from '~/providers/AuthProvider';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const ChatDetailsScreen = () => {
   const { id } = useLocalSearchParams();
@@ -177,6 +179,8 @@ const ChatDetailsScreen = () => {
     };
   }, [socket, currentChat]);
 
+  const { width } = useWindowDimensions();
+  const isTablet = width > 768;
   if (!currentChat) {
     return (
       <View className="flex-1 items-center justify-center">
@@ -186,92 +190,92 @@ const ChatDetailsScreen = () => {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1">
-      <View className="flex-1 bg-white">
-        <View className="sticky top-0 z-20 w-full flex-row items-center justify-between border-b border-taza-orange bg-taza-red p-4">
-          <View className="flex-row items-center">
-            {currentChat.isGroupChat ? (
-              <View className="relative h-12 w-12 flex-shrink-0 flex-row items-center justify-start">
-                {currentChat.participants.slice(0, 3).map((participant, i) => (
-                  <Image
-                    key={participant._id}
-                    source={{ uri: participant.avatar.url }}
-                    className="absolute h-9 w-9 rounded-full border border-white"
-                    style={{ left: i * 8, zIndex: 3 - i }}
-                  />
-                ))}
+    <LinearGradient colors={['#4c669f', '#3b5998', '#192f6a']} className="flex-1">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1">
+        <View className="flex-1">
+          <View className="sticky top-0 z-20 w-full flex-row items-center justify-between bg-white bg-opacity-90 p-4 shadow-md">
+            <View className="flex-row items-center">
+              {currentChat.isGroupChat ? (
+                <View className="relative h-12 w-12 flex-shrink-0 flex-row items-center justify-start">
+                  {currentChat.participants.slice(0, 3).map((participant, i) => (
+                    <Image
+                      key={participant._id}
+                      source={{ uri: participant.avatar.url }}
+                      className="absolute h-9 w-9 rounded-full border-2 border-white"
+                      style={{ left: i * 8, zIndex: 3 - i }}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <Image
+                  className="h-14 w-14 flex-shrink-0 rounded-full border-2 border-white"
+                  source={{ uri: getChatObjectMetadata(currentChat, user!).avatar }}
+                />
+              )}
+              <View className="ml-3">
+                <Text className="text-lg font-bold text-gray-800">
+                  {getChatObjectMetadata(currentChat, user!).title}
+                </Text>
+                <Text className="text-sm text-gray-600">
+                  {getChatObjectMetadata(currentChat, user!).description}
+                </Text>
               </View>
-            ) : (
-              <Image
-                className="h-14 w-14 flex-shrink-0 rounded-full"
-                source={{ uri: getChatObjectMetadata(currentChat, user!).avatar }}
-              />
-            )}
-            <View className="ml-3">
-              <Text className="font-bold text-white">
-                {getChatObjectMetadata(currentChat, user!).title}
-              </Text>
-              <Text className="text-sm text-taza-light">
-                {getChatObjectMetadata(currentChat, user!).description}
-              </Text>
             </View>
           </View>
-        </View>
 
-        <FlatList
-          inverted
-          className="p-4"
-          data={messages}
-          renderItem={({ item: msg }) => (
-            <MessageItem
-              isGroupChatMessage={currentChat?.isGroupChat}
-              message={msg}
-              isOwnMessage={msg.sender?._id === user?._id}
-              deleteChatMessage={deleteChatMessage}
-            />
-          )}
-          keyExtractor={(item) => item._id}
-          ListHeaderComponent={isTyping ? <Typing /> : null}
-        />
-
-        {attachedFiles.length > 0 && (
-          <ScrollView horizontal className="p-4">
-            {attachedFiles.map((file, i) => (
-              <View key={i} className="relative mr-2 h-32 w-32 rounded-xl">
-                <TouchableOpacity
-                  className="absolute -right-2 -top-2 z-10"
-                  onPress={() => {
-                    setAttachedFiles(attachedFiles.filter((_, ind) => ind !== i));
-                  }}>
-                  <XCircleIcon color="white" size={24} />
-                </TouchableOpacity>
-                <Image className="h-full w-full rounded-xl" source={{ uri: file.uri }} />
-              </View>
-            ))}
-          </ScrollView>
-        )}
-
-        <View className="w-full flex-row items-center justify-between border-t border-taza-orange bg-taza-light p-4">
-          <TouchableOpacity onPress={pickImage} className="rounded-full bg-taza-orange p-4">
-            <PaperClipIcon color="white" size={24} />
-          </TouchableOpacity>
-          <TextInput
-            placeholder="Message"
-            value={message}
-            onChangeText={handleOnMessageChange}
-            className="mx-2 flex-1 rounded-full bg-white px-4 py-2 text-taza-dark"
+          <FlatList
+            inverted
+            className={`p-4 ${isTablet ? 'px-16' : ''}`}
+            data={messages}
+            renderItem={({ item: msg }) => (
+              <MessageItem
+                isGroupChatMessage={currentChat?.isGroupChat}
+                message={msg}
+                isOwnMessage={msg.sender?._id === user?._id}
+                deleteChatMessage={deleteChatMessage}
+              />
+            )}
+            keyExtractor={(item) => item._id}
+            ListHeaderComponent={isTyping ? <Typing /> : null}
           />
-          <TouchableOpacity
-            onPress={sendChatMessage}
-            disabled={!message && attachedFiles.length <= 0}
-            className="rounded-full bg-taza-red p-4">
-            <PaperAirplaneIcon color="white" size={24} />
-          </TouchableOpacity>
+
+          {attachedFiles.length > 0 && (
+            <ScrollView horizontal className={`p-4 ${isTablet ? 'px-16' : ''}`}>
+              {attachedFiles.map((file, i) => (
+                <View key={i} className="relative mr-2 h-32 w-32 overflow-hidden rounded-xl">
+                  <TouchableOpacity
+                    className="absolute right-1 top-1 z-10"
+                    onPress={() => {
+                      setAttachedFiles(attachedFiles.filter((_, ind) => ind !== i));
+                    }}>
+                    <XCircleIcon color="white" size={24} />
+                  </TouchableOpacity>
+                  <Image className="h-full w-full rounded-xl" source={{ uri: file.uri }} />
+                </View>
+              ))}
+            </ScrollView>
+          )}
+
+          <View
+            className={`w-full flex-row items-center justify-between bg-white bg-opacity-90 p-4 ${isTablet ? 'px-16' : ''}`}>
+            <TextInput
+              placeholder="Message"
+              value={message}
+              onChangeText={handleOnMessageChange}
+              className="mr-2 flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-800"
+            />
+            <TouchableOpacity
+              onPress={sendChatMessage}
+              disabled={!message && attachedFiles.length <= 0}
+              className={`rounded-lg bg-indigo-600 p-3 ${!message && attachedFiles.length <= 0 ? 'opacity-50' : ''}`}>
+              <PaperAirplaneIcon color="white" size={24} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 };
 
