@@ -52,10 +52,12 @@ export default function AuthProvider({ children }: PropsWithChildren) {
             );
 
             if (data.data._id) {
+              console.log('data.data---', data.data?.username);
+
               user = {
                 _id: data.data._id!,
                 email: Suser.data.user?.email!,
-                username: Suser.data.user?.email!,
+                username: data.data?.username!,
                 createdAt: Suser.data.user?.created_at!,
                 updatedAt: Suser.data.user?.updated_at!,
                 avatar: {
@@ -103,7 +105,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
               user = {
                 _id: data.data._id!,
                 email: Suser.data.user?.email!,
-                username: Suser.data.user?.email!,
+                username: data.data?.username!,
                 createdAt: Suser.data.user?.created_at!,
                 updatedAt: Suser.data.user?.updated_at!,
                 avatar: {
