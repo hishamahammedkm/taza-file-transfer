@@ -13,9 +13,9 @@ const index = () => {
   if (!session) {
     return <Redirect href={'(auth)/sign-in'} />;
   }
-  // return <Redirect href={'(chat)'} />;
+  return <Redirect href={'(chat)'} />;
 
-  return <Redirect href={'/postInvoice'} />;
+  // return <Redirect href={'/postInvoice'} />;
 };
 
 export default index;
