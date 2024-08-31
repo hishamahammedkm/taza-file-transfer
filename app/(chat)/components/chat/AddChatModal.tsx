@@ -8,16 +8,16 @@ import {
   Modal,
   Switch,
   Alert,
+  TextInput,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { createGroupChat, createUserChat, getAvailableUsers } from '../../api';
 import { ChatListItemInterface } from 'interfaces/chat';
 import { UserInterface } from 'interfaces/user';
-
-import Button from '../Button';
-import Input from '../Input';
-import Select from '../Select';
 import { requestHandler } from '../../lib';
+import UserSelectionModal from '../UserSelectionModal';
 
 const AddChatModal: React.FC<{
   visible: boolean;
@@ -30,6 +30,9 @@ const AddChatModal: React.FC<{
   const [groupParticipants, setGroupParticipants] = useState<string[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<null | string>(null);
   const [creatingChat, setCreatingChat] = useState(false);
+  const [isUserSelectionModalVisible, setIsUserSelectionModalVisible] = useState(false);
+  const { width } = useWindowDimensions();
+  const isTablet = width > 768;
 
   const getUsers = async () => {
     requestHandler(
@@ -37,11 +40,9 @@ const AddChatModal: React.FC<{
       null,
       (res) => {
         const { data } = res;
-        console.log('data--users', data);
-
         setUsers(data || []);
       },
-      (error) => Alert.alert('Error')
+      (error) => Alert.alert('Error', 'Failed to fetch users')
     );
   };
 
@@ -60,7 +61,7 @@ const AddChatModal: React.FC<{
         onSuccess(data);
         handleClose();
       },
-      (error) => Alert.alert('Error')
+      (error) => Alert.alert('Error', 'Failed to create chat')
     );
   };
 
@@ -81,17 +82,30 @@ const AddChatModal: React.FC<{
         onSuccess(data);
         handleClose();
       },
-      (error) => Alert.alert('Error')
+      (error) => Alert.alert('Error', 'Failed to create group chat')
     );
   };
 
   const handleClose = () => {
     setUsers([]);
-    setSelectedUserId('');
+    setSelectedUserId(null);
     setGroupName('');
     setGroupParticipants([]);
     setIsGroupChat(false);
     onClose();
+  };
+
+  const handleUserSelect = (userId: string) => {
+    if (isGroupChat) {
+      if (groupParticipants.includes(userId)) {
+        setGroupParticipants(groupParticipants.filter((id) => id !== userId));
+      } else {
+        setGroupParticipants([...groupParticipants, userId]);
+      }
+    } else {
+      setSelectedUserId(userId);
+      setIsUserSelectionModalVisible(false);
+    }
   };
 
   useEffect(() => {
@@ -101,108 +115,112 @@ const AddChatModal: React.FC<{
 
   return (
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={handleClose}>
-      <View className="flex-1 justify-end">
-        <View className="bg-taza-red h-5/6 rounded-t-lg p-4">
-          <View className="mb-4 flex-row items-center justify-between">
-            <Text className="text-lg font-semibold text-white">Create chat</Text>
-            <TouchableOpacity onPress={handleClose}>
-              <Ionicons name="close" size={24} color="#FFF0E0" />
-            </TouchableOpacity>
-          </View>
+      <LinearGradient colors={['#4c669f', '#3b5998', '#192f6a']} className="flex-1">
+        <ScrollView contentContainerStyle="flex-grow">
+          <View className={`flex-1 justify-center p-8 ${isTablet ? 'px-16' : ''}`}>
+            <View className="rounded-3xl bg-white bg-opacity-90 p-8 shadow-lg">
+              <View className="mb-8 items-center">
+                <Text className="text-3xl font-bold text-gray-800">
+                  {isGroupChat ? 'Create Group Chat' : 'Create Chat'}
+                </Text>
+              </View>
 
-          <ScrollView>
-            <View className="my-5 flex-row items-center">
-              <Switch
-                value={isGroupChat}
-                onValueChange={setIsGroupChat}
-                trackColor={{ false: '#FFF0E0', true: '#FF9F1C' }}
-                thumbColor={isGroupChat ? '#FFFFFF' : '#FF4D4F'}
-              />
-              <Text className={`ml-3 text-white ${isGroupChat ? '' : 'opacity-60'}`}>
-                Is it a group chat?
-              </Text>
-            </View>
-
-            {isGroupChat && (
-              <View className="my-5">
-                <Input
-                  placeholder="Enter a group name..."
-                  value={groupName}
-                  onChangeText={setGroupName}
+              <View className="mb-6 flex-row items-center justify-between">
+                <Text className="text-lg font-semibold text-gray-700">Group Chat</Text>
+                <Switch
+                  value={isGroupChat}
+                  onValueChange={setIsGroupChat}
+                  trackColor={{ false: '#767577', true: '#4c669f' }}
+                  thumbColor={isGroupChat ? '#3b5998' : '#f4f3f4'}
                 />
               </View>
-            )}
 
-            <View className="my-5">
-              <Select
-                placeholder={
-                  isGroupChat ? 'Select group participants...' : 'Select a user to chat...'
-                }
-                value={isGroupChat ? '' : selectedUserId || ''}
-                options={users.map((user) => ({
-                  label: user.username,
-                  value: user._id,
-                }))}
-                onChange={({ value }) => {
-                  if (isGroupChat && !groupParticipants.includes(value)) {
-                    setGroupParticipants([...groupParticipants, value]);
-                  } else {
-                    setSelectedUserId(value);
-                  }
-                }}
-              />
-            </View>
+              {isGroupChat && (
+                <View className="mb-4">
+                  <View className="flex-row items-center rounded-lg border border-gray-300 px-3 py-2">
+                    <Ionicons name="people-outline" size={24} color="#666" className="mr-2" />
+                    <TextInput
+                      className="flex-1 text-base"
+                      placeholder="Group Name"
+                      placeholderTextColor="#999"
+                      value={groupName}
+                      onChangeText={setGroupName}
+                    />
+                  </View>
+                </View>
+              )}
 
-            {isGroupChat && (
-              <View className="my-5">
-                <View className="flex-row items-center">
-                  <Ionicons name="people" size={20} color="#FF9F1C" />
-                  <Text className="ml-2 font-medium text-white">Selected participants</Text>
-                </View>
-                <View className="mt-3 flex-row flex-wrap">
-                  {users
-                    .filter((user) => groupParticipants.includes(user._id))
-                    .map((participant) => (
-                      <View
-                        key={participant._id}
-                        className="bg-taza-light border-taza-orange m-1 flex-row items-center rounded-full border p-2">
-                        <Image
-                          source={{ uri: participant.avatar.url }}
-                          className="h-6 w-6 rounded-full"
-                        />
-                        <Text className="text-taza-dark mx-2">{participant.username}</Text>
-                        <TouchableOpacity
-                          onPress={() => {
-                            setGroupParticipants(
-                              groupParticipants.filter((p) => p !== participant._id)
-                            );
-                          }}>
-                          <Ionicons name="close-circle" size={24} color="#FF4D4F" />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                </View>
+              <View className="mb-4">
+                <TouchableOpacity
+                  className="flex-row items-center rounded-lg border border-gray-300 px-3 py-2"
+                  onPress={() => setIsUserSelectionModalVisible(true)}>
+                  <Ionicons name="person-outline" size={24} color="#666" className="mr-2" />
+                  <Text className="flex-1 text-base text-gray-700">
+                    {isGroupChat
+                      ? `${groupParticipants.length} participant${
+                          groupParticipants.length !== 1 ? 's' : ''
+                        } selected`
+                      : selectedUserId
+                        ? users.find((u) => u._id === selectedUserId)?.username
+                        : 'Select a user'}
+                  </Text>
+                  <Ionicons name="chevron-down-outline" size={24} color="#666" />
+                </TouchableOpacity>
               </View>
-            )}
-          </ScrollView>
 
-          <View className="mt-5 flex-row justify-between">
-            <Button
-              disabled={creatingChat}
-              onPress={handleClose}
-              className="bg-taza-light mr-2 flex-1">
-              Close
-            </Button>
+              {isGroupChat && groupParticipants.length > 0 && (
+                <View className="mb-4">
+                  <Text className="mb-2 font-semibold text-gray-700">Selected Participants:</Text>
+                  <View className="flex-row flex-wrap">
+                    {users
+                      .filter((user) => groupParticipants.includes(user._id))
+                      .map((participant) => (
+                        <View
+                          key={participant._id}
+                          className="m-1 flex-row items-center rounded-full bg-gray-200 p-2">
+                          <Image
+                            source={{ uri: participant.avatar.url }}
+                            className="h-6 w-6 rounded-full"
+                          />
+                          <Text className="mx-2 text-gray-800">{participant.username}</Text>
+                          <TouchableOpacity onPress={() => handleUserSelect(participant._id)}>
+                            <Ionicons name="close-circle" size={24} color="#FF4D4F" />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                  </View>
+                </View>
+              )}
 
-            <Button
-              disabled={creatingChat}
-              onPress={isGroupChat ? createNewGroupChat : createNewChat}
-              className="bg-taza-orange ml-2 flex-1">
-              Create
-            </Button>
+              <TouchableOpacity
+                className={`items-center rounded-lg bg-indigo-600 py-3 shadow-md ${
+                  creatingChat ? 'opacity-70' : ''
+                }`}
+                onPress={isGroupChat ? createNewGroupChat : createNewChat}
+                disabled={creatingChat}>
+                <Text className="text-lg font-bold text-white">
+                  {creatingChat ? 'Creating...' : 'Create Chat'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="mt-4 items-center rounded-lg border border-indigo-600 py-3"
+                onPress={handleClose}>
+                <Text className="text-lg font-bold text-indigo-600">Cancel</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </View>
+        </ScrollView>
+      </LinearGradient>
+
+      <UserSelectionModal
+        visible={isUserSelectionModalVisible}
+        onClose={() => setIsUserSelectionModalVisible(false)}
+        onSelect={handleUserSelect}
+        users={users}
+        isGroupChat={isGroupChat}
+        selectedUsers={isGroupChat ? groupParticipants : selectedUserId ? [selectedUserId] : []}
+      />
     </Modal>
   );
 };
