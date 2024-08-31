@@ -14,6 +14,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useWindowDimensions } from 'react-native';
+import Header from '~/components/Header';
 
 interface FormData {
   invoice_number: string;
@@ -108,126 +109,129 @@ export default function Home() {
   };
 
   return (
-    <LinearGradient colors={['#4c669f', '#3b5998', '#192f6a']} className="flex-1">
-      <ScrollView contentContainerClassName="flex-grow">
-        <View className={`flex-1 justify-center p-8 ${isTablet ? 'px-16' : ''}`}>
-          <View className="rounded-3xl bg-white bg-opacity-90 p-8 shadow-lg">
-            <Text className="mb-6 text-center text-3xl font-bold text-gray-800">Add Invoice</Text>
+    <>
+      <Header title='Invoice' />
+      <LinearGradient colors={['#4c669f', '#3b5998', '#192f6a']} className="flex-1">
+        <ScrollView contentContainerClassName="flex-grow">
+          <View className={`flex-1 justify-center p-8 ${isTablet ? 'px-16' : ''}`}>
+            <View className="rounded-3xl bg-white bg-opacity-90 p-8 shadow-lg">
+              <Text className="mb-6 text-center text-3xl font-bold text-gray-800">Add Invoice</Text>
 
-            <Controller
-              control={control}
-              render={({ field: { onChange, onBlur, value } }) => (
-                <View className="mb-4">
-                  <View
-                    className={`flex-row items-center rounded-lg border px-3 py-2 ${errors.invoice_number ? 'border-red-500' : 'border-gray-300'}`}>
-                    <Ionicons
-                      name="document-text-outline"
-                      size={24}
-                      color="#666"
-                      className="mr-2"
-                    />
-                    <TextInput
-                      className="flex-1 text-base"
-                      placeholder="Invoice Number"
-                      placeholderTextColor="#999"
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      value={value}
-                    />
+              <Controller
+                control={control}
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <View className="mb-4">
+                    <View
+                      className={`flex-row items-center rounded-lg border px-3 py-2 ${errors.invoice_number ? 'border-red-500' : 'border-gray-300'}`}>
+                      <Ionicons
+                        name="document-text-outline"
+                        size={24}
+                        color="#666"
+                        className="mr-2"
+                      />
+                      <TextInput
+                        className="flex-1 text-base"
+                        placeholder="Invoice Number"
+                        placeholderTextColor="#999"
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        value={value}
+                      />
+                    </View>
+                    {errors.invoice_number && (
+                      <Text className="mt-1 text-xs text-red-500">
+                        {errors.invoice_number.message}
+                      </Text>
+                    )}
                   </View>
-                  {errors.invoice_number && (
-                    <Text className="mt-1 text-xs text-red-500">
-                      {errors.invoice_number.message}
-                    </Text>
-                  )}
-                </View>
-              )}
-              name="invoice_number"
-            />
+                )}
+                name="invoice_number"
+              />
 
-            <Controller
-              control={control}
-              render={({ field: { onChange, value } }) => (
-                <View className="mb-4">
-                  <DropdownComponent
-                    data={branches}
-                    value={{ branch_id: value }}
-                    setValue={(newValue) => onChange(newValue.branch_id)}
-                  />
-                  {errors.branch_id && (
-                    <Text className="mt-1 text-xs text-red-500">{errors.branch_id.message}</Text>
-                  )}
-                </View>
-              )}
-              name="branch_id"
-            />
-
-            <Controller
-              control={control}
-              render={({ field: { onChange, value } }) => (
-                <View className="mb-4">
-                  <DTPicker
-                    value={{ date_time: value }}
-                    setValue={(newValue) => onChange(newValue.date_time)}
-                  />
-                  {errors.date_time && (
-                    <Text className="mt-1 text-xs text-red-500">{errors.date_time.message}</Text>
-                  )}
-                </View>
-              )}
-              name="date_time"
-            />
-
-            <TouchableOpacity
-              className="mb-4 flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-4"
-              onPress={pickImage}>
-              {image ? (
-                <Image source={{ uri: image }} className="h-48 w-full rounded-lg" />
-              ) : (
-                <View className="items-center">
-                  <Ionicons name="cloud-upload-outline" size={48} color="#666" />
-                  <Text className="mt-2 text-gray-500">Upload Invoice Image</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <Controller
-              control={control}
-              render={({ field: { onChange, onBlur, value } }) => (
-                <View className="mb-6">
-                  <View
-                    className={`rounded-lg border px-3 py-2 ${errors.remarks ? 'border-red-500' : 'border-gray-300'}`}>
-                    <TextInput
-                      className="h-24 text-base" // Set a fixed height
-                      placeholder="Remarks"
-                      placeholderTextColor="#999"
-                      multiline={true}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      value={value}
-                      textAlignVertical="top"
-                      scrollEnabled={true} // Enable scrolling within the TextInput
+              <Controller
+                control={control}
+                render={({ field: { onChange, value } }) => (
+                  <View className="mb-4">
+                    <DropdownComponent
+                      data={branches}
+                      value={{ branch_id: value }}
+                      setValue={(newValue) => onChange(newValue.branch_id)}
                     />
+                    {errors.branch_id && (
+                      <Text className="mt-1 text-xs text-red-500">{errors.branch_id.message}</Text>
+                    )}
                   </View>
-                  {errors.remarks && (
-                    <Text className="mt-1 text-xs text-red-500">{errors.remarks.message}</Text>
-                  )}
-                </View>
-              )}
-              name="remarks"
-            />
+                )}
+                name="branch_id"
+              />
 
-            <TouchableOpacity
-              className={`items-center rounded-lg bg-indigo-600 py-3 shadow-md ${loading ? 'opacity-70' : ''}`}
-              onPress={handleSubmit(onSubmit)}
-              disabled={loading}>
-              <Text className="text-lg font-bold text-white">
-                {loading ? 'Submitting...' : 'Add Invoice'}
-              </Text>
-            </TouchableOpacity>
+              <Controller
+                control={control}
+                render={({ field: { onChange, value } }) => (
+                  <View className="mb-4">
+                    <DTPicker
+                      value={{ date_time: value }}
+                      setValue={(newValue) => onChange(newValue.date_time)}
+                    />
+                    {errors.date_time && (
+                      <Text className="mt-1 text-xs text-red-500">{errors.date_time.message}</Text>
+                    )}
+                  </View>
+                )}
+                name="date_time"
+              />
+
+              <TouchableOpacity
+                className="mb-4 flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-4"
+                onPress={pickImage}>
+                {image ? (
+                  <Image source={{ uri: image }} className="h-48 w-full rounded-lg" />
+                ) : (
+                  <View className="items-center">
+                    <Ionicons name="cloud-upload-outline" size={48} color="#666" />
+                    <Text className="mt-2 text-gray-500">Upload Invoice Image</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <Controller
+                control={control}
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <View className="mb-6">
+                    <View
+                      className={`rounded-lg border px-3 py-2 ${errors.remarks ? 'border-red-500' : 'border-gray-300'}`}>
+                      <TextInput
+                        className="h-24 text-base" // Set a fixed height
+                        placeholder="Remarks"
+                        placeholderTextColor="#999"
+                        multiline={true}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        value={value}
+                        textAlignVertical="top"
+                        scrollEnabled={true} // Enable scrolling within the TextInput
+                      />
+                    </View>
+                    {errors.remarks && (
+                      <Text className="mt-1 text-xs text-red-500">{errors.remarks.message}</Text>
+                    )}
+                  </View>
+                )}
+                name="remarks"
+              />
+
+              <TouchableOpacity
+                className={`items-center rounded-lg bg-indigo-600 py-3 shadow-md ${loading ? 'opacity-70' : ''}`}
+                onPress={handleSubmit(onSubmit)}
+                disabled={loading}>
+                <Text className="text-lg font-bold text-white">
+                  {loading ? 'Submitting...' : 'Add Invoice'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </ScrollView>
-    </LinearGradient>
+        </ScrollView>
+      </LinearGradient>
+    </>
   );
 }

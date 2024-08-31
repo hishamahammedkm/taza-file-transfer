@@ -25,6 +25,12 @@ const Header = ({ title }: Props) => {
       <Appbar.BackAction onPress={() => router.back()} />
 
       <Appbar.Content title={title} />
+      <Appbar.Action
+        icon="chat"
+        onPress={() => {
+          router.push('/(chat)');
+        }}
+      />
 
       <Menu
         style={{

@@ -3,6 +3,7 @@ import React from 'react';
 
 import { Link, Redirect } from 'expo-router';
 import { useAuth } from '~/providers/AuthProvider';
+import { Stack } from 'expo-router';
 
 const index = () => {
   const { session, loading } = useAuth();
@@ -13,7 +14,7 @@ const index = () => {
   if (!session) {
     return <Redirect href={'(auth)/sign-in'} />;
   }
-  return <Redirect href={'(chat)'} />;
+  return <Stack />;
 
   // return <Redirect href={'/postInvoice'} />;
 };

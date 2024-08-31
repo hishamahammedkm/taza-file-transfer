@@ -8,6 +8,7 @@ import {
   Alert,
   Modal,
   useWindowDimensions,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -206,35 +207,46 @@ const GroupChatDetailsModal: React.FC<{
                 </View>
 
                 {renamingGroup ? (
-                  <View className="mb-4">
-                    <Input
-                      placeholder="Enter new group name..."
-                      value={newGroupName}
-                      onChangeText={setNewGroupName}
-                    />
-                    <View className="mt-2 flex-row justify-between">
-                      <Button onPress={handleGroupNameUpdate} className="mr-2 flex-1">
+                  <View className="mb-6">
+                    <View className="mb-4 flex-row items-center rounded-lg border border-gray-300 px-3 py-2">
+                      <Ionicons name="pencil-outline" size={24} color="#666" className="mr-2" />
+                      <TextInput
+                        className="flex-1 text-base"
+                        placeholder="Enter new group name..."
+                        placeholderTextColor="#999"
+                        value={newGroupName}
+                        onChangeText={setNewGroupName}
+                      />
+                    </View>
+                    <View className="flex-row justify-between space-x-4">
+                      <TouchableOpacity
+                        onPress={handleGroupNameUpdate}
+                        className="flex-1 items-center rounded-lg bg-indigo-600 py-3 shadow-md">
                         <Text className="font-bold text-white">Save</Text>
-                      </Button>
-                      <Button onPress={() => setRenamingGroup(false)} className="ml-2 flex-1">
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => setRenamingGroup(false)}
+                        className="flex-1 items-center rounded-lg bg-gray-400 py-3 shadow-md">
                         <Text className="font-bold text-white">Cancel</Text>
-                      </Button>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 ) : (
                   groupDetails?.admin === user?._id && (
-                    <Button onPress={() => setRenamingGroup(true)} className="mb-4">
+                    <TouchableOpacity
+                      onPress={() => setRenamingGroup(true)}
+                      className="mb-6 items-center rounded-lg bg-indigo-600 py-3 shadow-md">
                       <Text className="font-bold text-white">Rename Group</Text>
-                    </Button>
+                    </TouchableOpacity>
                   )
                 )}
 
-                <View className="mb-4">
-                  <Text className="mb-2 text-xl font-bold text-gray-800">Participants</Text>
+                <View className="mb-6">
+                  <Text className="mb-4 text-xl font-bold text-gray-800">Participants</Text>
                   {groupDetails?.participants?.map((part) => (
                     <View
                       key={part._id}
-                      className="flex-row items-center justify-between border-b border-gray-200 py-2">
+                      className="mb-3 flex-row items-center justify-between border-b border-gray-200 pb-3">
                       <View className="flex-row items-center">
                         <Image
                           source={{ uri: part.avatar.url }}
@@ -251,7 +263,7 @@ const GroupChatDetailsModal: React.FC<{
                         </Text>
                       )}
                       {groupDetails.admin === user?._id && part._id !== user?._id && (
-                        <Button
+                        <TouchableOpacity
                           onPress={() => {
                             Alert.alert(
                               'Remove Participant',
@@ -262,9 +274,9 @@ const GroupChatDetailsModal: React.FC<{
                               ]
                             );
                           }}
-                          className="bg-red-500">
+                          className="rounded-lg bg-red-500 px-3 py-2">
                           <Text className="font-bold text-white">Remove</Text>
-                        </Button>
+                        </TouchableOpacity>
                       )}
                     </View>
                   ))}
@@ -273,11 +285,13 @@ const GroupChatDetailsModal: React.FC<{
                 {groupDetails?.admin === user?._id && (
                   <View className="space-y-4">
                     {!addingParticipant ? (
-                      <Button onPress={() => setAddingParticipant(true)}>
+                      <TouchableOpacity
+                        onPress={() => setAddingParticipant(true)}
+                        className="items-center rounded-lg bg-indigo-600 py-3 shadow-md">
                         <Text className="font-bold text-white">Add Participant</Text>
-                      </Button>
+                      </TouchableOpacity>
                     ) : (
-                      <View className="space-y-2">
+                      <View className="gap-2 space-y-4">
                         <TouchableOpacity
                           className="flex-row items-center rounded-lg border border-gray-300 px-3 py-2"
                           onPress={() => setIsUserSelectionModalVisible(true)}>
@@ -293,36 +307,35 @@ const GroupChatDetailsModal: React.FC<{
                           </Text>
                           <Ionicons name="chevron-down-outline" size={24} color="#666" />
                         </TouchableOpacity>
-                        {/* <Select
-                          placeholder="Select a user to add..."
-                          value={participantToBeAdded}
-                          options={users.map((user) => ({ label: user.username, value: user._id }))}
-                          onChange={({ value }) => {
-                            setParticipantToBeAdded(value);
-                          }}
-                        /> */}
-                        <Button onPress={addParticipant}>
+                        <TouchableOpacity
+                          onPress={addParticipant}
+                          className="items-center rounded-lg bg-indigo-600 py-3 shadow-md">
                           <Text className="font-bold text-white">Add</Text>
-                        </Button>
-                        <Button
+                        </TouchableOpacity>
+                        <TouchableOpacity
                           onPress={() => {
                             setAddingParticipant(false);
-                            setParticipantToBeAdded('');
-                          }}>
+                            setSelectedUserId(null);
+                          }}
+                          className="items-center rounded-lg bg-gray-400 py-3 shadow-md">
                           <Text className="font-bold text-white">Cancel</Text>
-                        </Button>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => {
+                            Alert.alert(
+                              'Delete Group',
+                              'Are you sure you want to delete this group?',
+                              [
+                                { text: 'Cancel', style: 'cancel' },
+                                { text: 'OK', onPress: deleteGroupChat },
+                              ]
+                            );
+                          }}
+                          className="items-center rounded-lg bg-red-500 py-3 shadow-md">
+                          <Text className="font-bold text-white">Delete Group</Text>
+                        </TouchableOpacity>
                       </View>
                     )}
-                    <Button
-                      onPress={() => {
-                        Alert.alert('Delete Group', 'Are you sure you want to delete this group?', [
-                          { text: 'Cancel', style: 'cancel' },
-                          { text: 'OK', onPress: deleteGroupChat },
-                        ]);
-                      }}
-                      className="bg-red-500">
-                      <Text className="font-bold text-white">Delete Group</Text>
-                    </Button>
                   </View>
                 )}
               </View>
