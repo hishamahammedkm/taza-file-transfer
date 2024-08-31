@@ -1,80 +1,57 @@
 import React, { useEffect, useRef } from 'react';
-import { View } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 import { Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const Typing: React.FC = () => {
-  const animation1 = useRef(new Animated.Value(0)).current;
-  const animation2 = useRef(new Animated.Value(0)).current;
-  const animation3 = useRef(new Animated.Value(0)).current;
+  const animations = [0, 1, 2].map(() => useRef(new Animated.Value(0)).current);
+  const { width } = useWindowDimensions();
 
   useEffect(() => {
-    const animateDot = (animation: Animated.Value) => {
-      Animated.sequence([
-        Animated.timing(animation, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(animation, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
+    const animateDot = (animation: Animated.Value, delay: number) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(animation, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+            delay,
+          }),
+          Animated.timing(animation, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
     };
 
-    const interval = setInterval(() => {
-      animateDot(animation1);
-      setTimeout(() => animateDot(animation2), 150);
-      setTimeout(() => animateDot(animation3), 300);
-    }, 1000);
+    animations.forEach((animation, index) => animateDot(animation, index * 150));
 
-    return () => clearInterval(interval);
+    return () => animations.forEach((animation) => animation.stopAnimation());
   }, []);
 
-  const AnimatedView = Animated.createAnimatedComponent(View);
+  const AnimatedDot = ({ animation }: { animation: Animated.Value }) => (
+    <Animated.View
+      className="mx-1 h-2 w-2 rounded-full bg-indigo-600 opacity-90"
+      style={{
+        transform: [
+          {
+            scale: animation.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 1.3],
+            }),
+          },
+        ],
+      }}
+    />
+  );
 
   return (
-    <View className="bg-taza-light flex-row rounded-3xl p-5">
-      <AnimatedView
-        className="bg-taza-red mx-[0.5px] h-2 w-2 rounded-full"
-        style={{
-          transform: [
-            {
-              scale: animation1.interpolate({
-                inputRange: [0, 1],
-                outputRange: [1, 1.5],
-              }),
-            },
-          ],
-        }}
-      />
-      <AnimatedView
-        className="bg-taza-orange mx-[0.5px] h-2 w-2 rounded-full"
-        style={{
-          transform: [
-            {
-              scale: animation2.interpolate({
-                inputRange: [0, 1],
-                outputRange: [1, 1.5],
-              }),
-            },
-          ],
-        }}
-      />
-      <AnimatedView
-        className="bg-taza-red mx-[0.5px] h-2 w-2 rounded-full"
-        style={{
-          transform: [
-            {
-              scale: animation3.interpolate({
-                inputRange: [0, 1],
-                outputRange: [1, 1.5],
-              }),
-            },
-          ],
-        }}
-      />
+    <View className="flex-row items-center justify-center">
+      {animations.map((animation, index) => (
+        <AnimatedDot key={index} animation={animation} />
+      ))}
     </View>
   );
 };
