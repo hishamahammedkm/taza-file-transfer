@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Alert, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  Alert,
+  Modal,
+  useWindowDimensions,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   addParticipantToGroup,
   deleteGroup,
@@ -12,11 +22,12 @@ import {
 import { ChatListItemInterface } from 'interfaces/chat';
 import { UserInterface } from 'interfaces/user';
 
-import Button from '../Button'; // Assume this is a custom React Native button component
-import Input from '../Input'; // Assume this is a custom React Native input component
-import Select from '../Select'; // Assume this is a custom React Native select component
+import Button from '../Button';
+import Input from '../Input';
+import Select from '../Select';
 import { useAuth } from '~/providers/AuthProvider';
 import { requestHandler } from '../../lib';
+import UserSelectionModal from '../UserSelectionModal';
 
 const GroupChatDetailsModal: React.FC<{
   visible: boolean;
@@ -25,12 +36,19 @@ const GroupChatDetailsModal: React.FC<{
   onGroupDelete: (chatId: string) => void;
 }> = ({ visible, onClose, chatId, onGroupDelete }) => {
   const { user } = useAuth();
+  const { width } = useWindowDimensions();
+  const isTablet = width > 768;
+
   const [addingParticipant, setAddingParticipant] = useState(false);
   const [renamingGroup, setRenamingGroup] = useState(false);
   const [participantToBeAdded, setParticipantToBeAdded] = useState('');
   const [newGroupName, setNewGroupName] = useState('');
   const [groupDetails, setGroupDetails] = useState<ChatListItemInterface | null>(null);
   const [users, setUsers] = useState<UserInterface[]>([]);
+  const [isUserSelectionModalVisible, setIsUserSelectionModalVisible] = useState(false);
+  const [isGroupChat, setIsGroupChat] = useState(false);
+  const [groupParticipants, setGroupParticipants] = useState<string[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<null | string>(null);
 
   const handleGroupNameUpdate = async () => {
     if (!newGroupName) return Alert.alert('Error', 'Group name is required');
@@ -94,10 +112,10 @@ const GroupChatDetailsModal: React.FC<{
   };
 
   const addParticipant = async () => {
-    if (!participantToBeAdded) return Alert.alert('Error', 'Please select a participant to add.');
+    if (!selectedUserId) return Alert.alert('Error', 'Please select a participant to add.');
 
     requestHandler(
-      async () => await addParticipantToGroup(chatId, participantToBeAdded),
+      async () => await addParticipantToGroup(chatId, selectedUserId),
       null,
       (res) => {
         const { data } = res;
@@ -107,9 +125,23 @@ const GroupChatDetailsModal: React.FC<{
         };
         setGroupDetails(updatedGroupDetails as ChatListItemInterface);
         Alert.alert('Success', 'Participant added');
+        setAddingParticipant(false);
+        setParticipantToBeAdded('');
       },
       (error) => Alert.alert('Error')
     );
+  };
+  const handleUserSelect = (userId: string) => {
+    if (isGroupChat) {
+      if (groupParticipants.includes(userId)) {
+        setGroupParticipants(groupParticipants.filter((id) => id !== userId));
+      } else {
+        setGroupParticipants([...groupParticipants, userId]);
+      }
+    } else {
+      setSelectedUserId(userId);
+      setIsUserSelectionModalVisible(false);
+    }
   };
 
   const fetchGroupInformation = async () => {
@@ -132,151 +164,181 @@ const GroupChatDetailsModal: React.FC<{
   }, [visible]);
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}>
-      <View className="bg-taza-light flex-1">
-        <ScrollView>
-          <View className="px-4 pb-4 pt-6">
-            <TouchableOpacity onPress={onClose} className="self-end">
-              <Ionicons name="close" size={24} color="#FF4D4F" />
-            </TouchableOpacity>
-          </View>
+    <>
+      <Modal
+        visible={visible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={onClose}>
+        <LinearGradient colors={['#4c669f', '#3b5998', '#192f6a']} className="flex-1">
+          <ScrollView contentContainerStyle="flex-grow">
+            <View className={`flex-1 justify-center p-8 ${isTablet ? 'px-16' : ''}`}>
+              <View className="rounded-3xl bg-white bg-opacity-90 p-8 shadow-lg">
+                <TouchableOpacity onPress={onClose} className="mb-4 self-end">
+                  <Ionicons name="close" size={24} color="#FF4D4F" />
+                </TouchableOpacity>
 
-          <View className="px-4">
-            <View className="relative flex-row items-center justify-center">
-              {groupDetails?.participants
-                .slice(0, 3)
-                .map((p, index) => (
-                  <Image
-                    key={p._id}
-                    source={{ uri: p.avatar.url }}
-                    className={`absolute h-24 w-24 rounded-full ${
-                      index === 0 ? 'left-0' : index === 1 ? 'left-16' : 'left-32'
-                    }`}
-                  />
-                ))}
-              {groupDetails?.participants && groupDetails.participants.length > 3 && (
-                <Text className="text-taza-red ml-80">+{groupDetails.participants.length - 3}</Text>
-              )}
-            </View>
-
-            <View className="mt-28 items-center">
-              {renamingGroup ? (
-                <View className="mt-5 w-full flex-row items-center justify-center space-x-2">
-                  <Input
-                    placeholder="Enter new group name..."
-                    value={newGroupName}
-                    onChangeText={setNewGroupName}
-                  />
-                  <Button onPress={handleGroupNameUpdate}>
-                    <Text>Save</Text>
-                  </Button>
-                  <Button onPress={() => setRenamingGroup(false)}>
-                    <Text>Cancel</Text>
-                  </Button>
-                </View>
-              ) : (
-                <View className="mt-5 flex-row items-center justify-center">
-                  <Text className="text-taza-red text-2xl font-semibold">{groupDetails?.name}</Text>
-                  {groupDetails?.admin === user?._id && (
-                    <TouchableOpacity onPress={() => setRenamingGroup(true)} className="ml-4">
-                      <Ionicons name="pencil" size={20} color="#FF9F1C" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              )}
-              <Text className="text-taza-dark mt-2 text-sm">
-                Group · {groupDetails?.participants.length} participants
-              </Text>
-            </View>
-
-            <View className="mt-5">
-              <View className="flex-row items-center">
-                <Ionicons name="people" size={24} color="#FF4D4F" />
-                <Text className="text-taza-red ml-2">
-                  {groupDetails?.participants.length} Participants
-                </Text>
-              </View>
-
-              {groupDetails?.participants?.map((part) => (
-                <View key={part._id} className="border-taza-orange border-b py-4">
-                  <View className="flex-row items-center">
-                    <Image source={{ uri: part.avatar.url }} className="h-12 w-12 rounded-full" />
-                    <View className="ml-3">
-                      <Text className="text-taza-dark font-semibold">
-                        {part.username}
-                        {part._id === groupDetails.admin && (
-                          <Text className="bg-taza-orange/10 border-taza-orange text-taza-orange ml-2 rounded-full border px-2 text-xs">
-                            admin
-                          </Text>
-                        )}
-                      </Text>
-                      <Text className="text-taza-dark opacity-60">{part.email}</Text>
-                    </View>
-                    {groupDetails.admin === user?._id && (
-                      <Button
-                        onPress={() => {
-                          Alert.alert(
-                            'Remove Participant',
-                            `Are you sure you want to remove ${part.username}?`,
-                            [
-                              { text: 'Cancel', style: 'cancel' },
-                              { text: 'OK', onPress: () => removeParticipant(part._id || '') },
-                            ]
-                          );
-                        }}>
-                        <Text>Remove</Text>
-                      </Button>
-                    )}
+                <View className="mb-8 items-center">
+                  <View className="relative mb-4 flex-row items-center justify-center">
+                    {groupDetails?.participants
+                      .slice(0, 3)
+                      .map((p, index) => (
+                        <Image
+                          key={p._id}
+                          source={{ uri: p.avatar.url }}
+                          className={`absolute h-16 w-16 rounded-full ${
+                            index === 0 ? '-left-8' : index === 1 ? 'left-0' : 'left-8'
+                          }`}
+                        />
+                      ))}
                   </View>
+                  {groupDetails?.participants && groupDetails.participants.length > 3 && (
+                    <Text className="mt-2 text-indigo-600">
+                      +{groupDetails.participants.length - 3}
+                    </Text>
+                  )}
+                  <Text className="mt-4 text-3xl font-bold text-gray-800">
+                    {groupDetails?.name}
+                  </Text>
+                  <Text className="mt-2 text-gray-600">
+                    Group · {groupDetails?.participants.length} participants
+                  </Text>
                 </View>
-              ))}
 
-              {groupDetails?.admin === user?._id && (
-                <View className="my-5 space-y-4">
-                  {!addingParticipant ? (
-                    <Button onPress={() => setAddingParticipant(true)}>
-                      <Text>ADD </Text>
-                    </Button>
-                  ) : (
-                    <View className="space-y-2">
-                      <Select
-                        placeholder="Select a user to add..."
-                        value={participantToBeAdded}
-                        options={users.map((user) => ({ label: user.username, value: user._id }))}
-                        onChange={({ value }) => {
-                          setParticipantToBeAdded(value);
-                        }}
-                      />
-                      <Button onPress={addParticipant}>Add</Button>
-                      <Button
-                        onPress={() => {
-                          setAddingParticipant(false);
-                          setParticipantToBeAdded('');
-                        }}>
-                        Cancel
+                {renamingGroup ? (
+                  <View className="mb-4">
+                    <Input
+                      placeholder="Enter new group name..."
+                      value={newGroupName}
+                      onChangeText={setNewGroupName}
+                    />
+                    <View className="mt-2 flex-row justify-between">
+                      <Button onPress={handleGroupNameUpdate} className="mr-2 flex-1">
+                        <Text className="font-bold text-white">Save</Text>
+                      </Button>
+                      <Button onPress={() => setRenamingGroup(false)} className="ml-2 flex-1">
+                        <Text className="font-bold text-white">Cancel</Text>
                       </Button>
                     </View>
-                  )}
-                  <Button
-                    onPress={() => {
-                      Alert.alert('Delete Group', 'Are you sure you want to delete this group?', [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'OK', onPress: deleteGroupChat },
-                      ]);
-                    }}>
-                    Delete group
-                  </Button>
+                  </View>
+                ) : (
+                  groupDetails?.admin === user?._id && (
+                    <Button onPress={() => setRenamingGroup(true)} className="mb-4">
+                      <Text className="font-bold text-white">Rename Group</Text>
+                    </Button>
+                  )
+                )}
+
+                <View className="mb-4">
+                  <Text className="mb-2 text-xl font-bold text-gray-800">Participants</Text>
+                  {groupDetails?.participants?.map((part) => (
+                    <View
+                      key={part._id}
+                      className="flex-row items-center justify-between border-b border-gray-200 py-2">
+                      <View className="flex-row items-center">
+                        <Image
+                          source={{ uri: part.avatar.url }}
+                          className="h-10 w-10 rounded-full"
+                        />
+                        <View className="ml-3">
+                          <Text className="font-semibold">{part.username}</Text>
+                          <Text className="text-sm text-gray-600">{part.email}</Text>
+                        </View>
+                      </View>
+                      {part._id === groupDetails.admin && (
+                        <Text className="rounded-full bg-indigo-100 px-2 py-1 text-xs text-indigo-800">
+                          admin
+                        </Text>
+                      )}
+                      {groupDetails.admin === user?._id && part._id !== user?._id && (
+                        <Button
+                          onPress={() => {
+                            Alert.alert(
+                              'Remove Participant',
+                              `Are you sure you want to remove ${part.username}?`,
+                              [
+                                { text: 'Cancel', style: 'cancel' },
+                                { text: 'OK', onPress: () => removeParticipant(part._id || '') },
+                              ]
+                            );
+                          }}
+                          className="bg-red-500">
+                          <Text className="font-bold text-white">Remove</Text>
+                        </Button>
+                      )}
+                    </View>
+                  ))}
                 </View>
-              )}
+
+                {groupDetails?.admin === user?._id && (
+                  <View className="space-y-4">
+                    {!addingParticipant ? (
+                      <Button onPress={() => setAddingParticipant(true)}>
+                        <Text className="font-bold text-white">Add Participant</Text>
+                      </Button>
+                    ) : (
+                      <View className="space-y-2">
+                        <TouchableOpacity
+                          className="flex-row items-center rounded-lg border border-gray-300 px-3 py-2"
+                          onPress={() => setIsUserSelectionModalVisible(true)}>
+                          <Ionicons name="person-outline" size={24} color="#666" className="mr-2" />
+                          <Text className="flex-1 text-base text-gray-700">
+                            {isGroupChat
+                              ? `${groupParticipants.length} participant${
+                                  groupParticipants.length !== 1 ? 's' : ''
+                                } selected`
+                              : selectedUserId
+                                ? users.find((u) => u._id === selectedUserId)?.username
+                                : 'Select a user'}
+                          </Text>
+                          <Ionicons name="chevron-down-outline" size={24} color="#666" />
+                        </TouchableOpacity>
+                        {/* <Select
+                          placeholder="Select a user to add..."
+                          value={participantToBeAdded}
+                          options={users.map((user) => ({ label: user.username, value: user._id }))}
+                          onChange={({ value }) => {
+                            setParticipantToBeAdded(value);
+                          }}
+                        /> */}
+                        <Button onPress={addParticipant}>
+                          <Text className="font-bold text-white">Add</Text>
+                        </Button>
+                        <Button
+                          onPress={() => {
+                            setAddingParticipant(false);
+                            setParticipantToBeAdded('');
+                          }}>
+                          <Text className="font-bold text-white">Cancel</Text>
+                        </Button>
+                      </View>
+                    )}
+                    <Button
+                      onPress={() => {
+                        Alert.alert('Delete Group', 'Are you sure you want to delete this group?', [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'OK', onPress: deleteGroupChat },
+                        ]);
+                      }}
+                      className="bg-red-500">
+                      <Text className="font-bold text-white">Delete Group</Text>
+                    </Button>
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      </View>
-    </Modal>
+          </ScrollView>
+        </LinearGradient>
+      </Modal>
+      <UserSelectionModal
+        visible={isUserSelectionModalVisible}
+        onClose={() => setIsUserSelectionModalVisible(false)}
+        onSelect={handleUserSelect}
+        users={users}
+        isGroupChat={false}
+        selectedUsers={isGroupChat ? groupParticipants : selectedUserId ? [selectedUserId] : []}
+      />
+    </>
   );
 };
 
