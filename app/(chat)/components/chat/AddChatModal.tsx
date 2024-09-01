@@ -115,8 +115,8 @@ const AddChatModal: React.FC<{
 
   return (
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={handleClose}>
-      <LinearGradient colors={['#4c669f', '#3b5998', '#192f6a']} className="flex-1">
-        <ScrollView>
+      <LinearGradient colors={['#4c669f', '#3b5998', '#192f6a']} className="flex-1 ">
+        <ScrollView contentContainerClassName="flex-grow">
           <View className={`flex-1  justify-center p-8 ${isTablet ? 'px-16' : ''}`}>
             <View className="rounded-3xl bg-white bg-opacity-90 p-8 shadow-lg">
               <View className="mb-8 items-center">
