@@ -37,7 +37,7 @@ const MESSAGE_DELETE_EVENT = 'messageDeleted';
 
 const ChatPage = () => {
   const { user, token } = useAuth();
-  console.log('user, token--', user, token);
+
 
   const { socket } = useSocket();
 

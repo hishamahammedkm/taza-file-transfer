@@ -43,7 +43,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
           let user: UserInterface | null;
 
           if (Suser) {
-            console.log('S user got');
+
 
             axios.defaults.headers.common['Authorization'] = `Bearer ${session.access_token}`;
 
@@ -52,7 +52,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
             );
 
             if (data.data._id) {
-              console.log('data.data---', data.data?.username);
+
 
               user = {
                 _id: data.data._id!,
@@ -70,7 +70,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
               setUser(user);
             }
           } else {
-            console.log('user not found');
+
 
             setUser(null);
           }
@@ -93,7 +93,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
           let user: UserInterface | null;
 
           if (Suser) {
-            console.log('S user got');
+
 
             axios.defaults.headers.common['Authorization'] = `Bearer ${session.access_token}`;
 

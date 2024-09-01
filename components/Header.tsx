@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
   const route = useRoute();
   const { width } = useWindowDimensions();
   const { user } = useAuth();
-  console.log('user  at UUU', user?.username);
+
 
   const insets = useSafeAreaInsets();
   const [isMenuVisible, setIsMenuVisible] = useState(false);

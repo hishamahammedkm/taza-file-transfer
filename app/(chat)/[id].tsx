@@ -80,7 +80,7 @@ const ChatDetailsScreen = () => {
         null,
         (res) => {
           setMessages((prev) => prev.filter((msg) => msg._id !== res.data._id));
-          console.log('Message deleted successfully');
+
         },
         (error) => {
           console.error('Error deleting message:', error);
