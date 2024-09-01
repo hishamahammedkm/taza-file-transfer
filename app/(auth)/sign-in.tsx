@@ -68,7 +68,7 @@ const SignInScreen: React.FC = () => {
         <View className={`flex-1 justify-center p-8 ${isTablet ? 'px-16' : ''}`}>
           <View className="rounded-3xl bg-white bg-opacity-90 p-8 shadow-lg">
             <View className="mb-8 items-center">
-              <Image source={require('~/assets/splash.jpeg')} className="h-32 w-32 rounded-full" />
+              <Image source={require('~/assets/splash.png')} className="h-32 w-32 rounded-full" />
               <Text className="mt-4 text-3xl font-bold text-gray-800">Sign In</Text>
             </View>
 
