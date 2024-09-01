@@ -29,7 +29,7 @@ apiClient.interceptors.request.use(
     return config;
   },
   function (error) {
-    return Promise.reject(error);
+    // return Promise.reject(error);
   }
 );
 
@@ -117,7 +117,6 @@ const sendMessage = async (chatId: string, content: string, attachments: File[])
   }
 };
 const deleteMessage = (chatId: string, messageId: string) => {
-
   return apiClient.delete(`/chat-app/messages/${chatId}/${messageId}`);
 };
 

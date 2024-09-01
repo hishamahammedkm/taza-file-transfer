@@ -17,7 +17,7 @@
       "tsconfigPaths": true
     },
     "orientation": "portrait",
-    "icon": "./assets/icon.jpeg",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "assetBundlePatterns": [
       "**/*"
@@ -28,7 +28,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.jpeg",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.hishamkm.tazafiletransfer"

@@ -1,25 +1,21 @@
 {
-  "cli": {
-    "version": ">= 10.2.3"
-  },
   "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal"
-    },
     "preview": {
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview2": {
+      "android": {
+        "gradleCommand": ":app:assembleRelease"
+      }
+    },
+    "preview3": {
+      "developmentClient": true
+    },
+    "preview4": {
       "distribution": "internal"
     },
-    "production": {
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL":"https://rljxigbqovuvevwvyhov.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsanhpZ2Jxb3Z1dmV2d3Z5aG92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjM2MjE0MDEsImV4cCI6MjAzOTE5NzQwMX0._cJa8ZFbVfFRhrSaAsHiQDUxDFsio3iYo9r5WRT5rWY",
-        "EXPO_PUBLIC_SERVER_URI":"https://taza-chat-server-production-04ac.up.railway.app/api/v1",
-        "EXPO_PUBLIC_SOCKET_URI":"https://taza-chat-server-production-04ac.up.railway.app"
-      }
-    }
-  },
-  "submit": {
     "production": {}
   }
 }
