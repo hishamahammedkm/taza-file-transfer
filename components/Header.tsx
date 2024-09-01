@@ -56,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
   const handleLogout = async () => {
     setIsMenuVisible(false);
     // Implement your signOut logic here
-    supabase.auth.signOut();
+    await supabase.auth.signOut();
     router.replace('/(auth)/sign-in');
   };
 
