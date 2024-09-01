@@ -29,7 +29,7 @@ apiClient.interceptors.request.use(
     return config;
   },
   function (error) {
-    // return Promise.reject(error);
+    return Promise.reject(error);
   }
 );
 
