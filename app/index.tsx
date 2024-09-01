@@ -12,6 +12,7 @@ const index = () => {
   //   }
 
   if (!session) {
+    // @ts-ignore
     return <Redirect href={'(auth)/sign-in'} />;
   }
   // return <Stack />;

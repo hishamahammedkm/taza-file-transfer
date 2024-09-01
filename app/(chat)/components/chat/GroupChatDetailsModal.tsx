@@ -172,7 +172,7 @@ const GroupChatDetailsModal: React.FC<{
         presentationStyle="pageSheet"
         onRequestClose={onClose}>
         <LinearGradient colors={['#4c669f', '#3b5998', '#192f6a']} className="flex-1">
-          <ScrollView contentContainerStyle="flex-grow">
+          <ScrollView>
             <View className={`flex-1 justify-center p-8 ${isTablet ? 'px-16' : ''}`}>
               <View className="rounded-3xl bg-white bg-opacity-90 p-8 shadow-lg">
                 <TouchableOpacity onPress={onClose} className="mb-4 self-end">
