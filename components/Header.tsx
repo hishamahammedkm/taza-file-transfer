@@ -20,10 +20,9 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ title }) => {
-  const navigation = useNavigation();
   const route = useRoute();
   const { width } = useWindowDimensions();
-  const { user } = useAuth();
+  const { user, logOut } = useAuth();
 
   const insets = useSafeAreaInsets();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
@@ -56,8 +55,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
   const handleLogout = async () => {
     setIsMenuVisible(false);
     // Implement your signOut logic here
-    await supabase.auth.signOut();
-    router.replace('/(auth)/sign-in');
+    await logOut();
   };
 
   const toggleMenu = (event: any) => {
