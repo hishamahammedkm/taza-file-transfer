@@ -45,9 +45,6 @@ export default function AuthProvider({ children }: PropsWithChildren) {
         data: { session },
       } = await supabase.auth.getSession();
 
-      setSession(session);
-      setToken(session?.access_token!);
-
       if (session) {
         const setUp = async () => {
           const Suser = await supabase.auth.getUser();
@@ -76,9 +73,14 @@ export default function AuthProvider({ children }: PropsWithChildren) {
               };
 
               setUser(user);
+
+              setSession(session);
+              setToken(session?.access_token!);
             }
           } else {
             setUser(null);
+            setSession(null);
+            setToken(null);
           }
         };
         setUp();

@@ -9,7 +9,7 @@ import {
   ScrollView,
   useWindowDimensions,
 } from 'react-native';
-import { Link, Stack } from 'expo-router';
+import { Link, router, Stack } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -65,7 +65,8 @@ const SignUpScreen: React.FC = () => {
 
         if (updateError) throw updateError;
 
-        Alert.alert('Success', 'Account created successfully!');
+        Alert.alert('Success', 'Account created successfully! Please Sign In');
+        router.replace('/(auth)/sign-in');
       }
     } catch (error) {
       Alert.alert('Error', (error as Error).message);

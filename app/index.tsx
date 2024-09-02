@@ -7,13 +7,12 @@ import { Stack } from 'expo-router';
 
 const index = () => {
   const { session, loading } = useAuth();
-  //   if (loading) {
-  //     return <ActivityIndicator />;
-  //   }
+  if (loading) {
+    return <ActivityIndicator />;
+  }
 
   if (!session) {
-
-    return <Redirect href={'(auth)/sign-in'} />;
+    return <Redirect href={'/sign-in'} />;
   }
   // return <Stack />;
 

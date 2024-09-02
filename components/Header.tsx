@@ -23,6 +23,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
   const route = useRoute();
   const { width } = useWindowDimensions();
   const { user, logOut } = useAuth();
+  console.log('user--- from header--', user);
 
   const insets = useSafeAreaInsets();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
