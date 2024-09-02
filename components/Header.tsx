@@ -53,9 +53,9 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
   };
 
   const handleLogout = async () => {
-    setIsMenuVisible(false);
-    // Implement your signOut logic here
     await logOut();
+    // setIsMenuVisible(false);
+    // Implement your signOut logic here
   };
 
   const toggleMenu = (event: any) => {
